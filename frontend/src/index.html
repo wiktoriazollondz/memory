@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Memory</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="auth-section">
+      <h2>Login</h2>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <button onclick="login()">Login</button>
+      <button onclick="register()">Register</button>
+    </div>
+
+    <div id="game-section" style="display: none">
+      <h3>Leaderboard</h3>
+      <ul id="leaderboard-list"></ul>
+      <div id="board" class="board"></div>
+      <h3>Room: <span id="room-id">None</span></h3>
+      <div id="board" class="board"></div>
+      <div id="chat">
+        <p>Messages from WebSocket:</p>
+        <ul id="messages"></ul>
+      </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

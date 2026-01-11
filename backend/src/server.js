@@ -1,13 +1,16 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
-const app = express();
-const DB_FILE = "./database.json";
 const http = require("http");
 const { Server } = require("socket.io");
+const mqtt = require("mqtt");
+const cors = require("cors");
 
+const app = express();
+app.use(cors());
 app.use(express.json());
 
+const DB_FILE = "./database.json";
 let users = [];
 
 // load data from file
@@ -19,7 +22,7 @@ const saveToFile = () => {
   fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2));
 };
 
-//websocket
+// ~~~~~~~~~ websocket ~~~~~~~~~
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "*" },
@@ -28,21 +31,34 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
-  // Join a specific game room
   socket.on("join-room", (roomName) => {
     socket.join(roomName);
     console.log(`User ${socket.id} joined room: ${roomName}`);
   });
 
-  socket.on("flip_card", (data) => {
-    // data = { room: "room123", cardIndex: 5 }
-    io.to(data.room).emit("flip-card", data);
+  socket.on("flip-card", (data) => {
+    // data = { room: "game1", index: 5, symbol: "🍎" }
+    if (data.room) {
+      io.to(data.room).emit("flip-card", data);
+    } else {
+      io.emit("flip-card", data);
+    }
   });
 
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
 });
+
+// ~~~~~~~~~ mqtt ~~~~~~~~~
+const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
+
+mqttClient.on("connect", () => {
+  console.log("Connected to MQTT broker!");
+  mqttClient.subscribe("memory-game/announcements"); // subscribe to a topic
+});
+
+// ~~~~~~~~~ CRUD ~~~~~~~~~
 
 app.post("/register", async (req, res) => {
   try {
@@ -97,7 +113,7 @@ app.post("/login", async (req, res) => {
 
 app.delete("/users/:username", async (req, res) => {
   try {
-    const username = req.params.username;
+    const { username } = req.params;
     users = users.filter((u) => u.username !== username);
     res.json(users);
     saveToFile();
@@ -109,14 +125,23 @@ app.delete("/users/:username", async (req, res) => {
 app.patch("/users/:username/score", async (req, res) => {
   try {
     const { newTime } = req.body;
-    const username = req.params.username;
+    const { username } = req.params;
 
     const user = users.find((u) => u.username === username);
-    if (!user) return res.status(400).send("User not found");
+    if (!user) return res.status(404).send("User not found");
 
     user.bestTime = newTime;
-    res.json(user);
     saveToFile();
+
+    // mqtt announcement
+    const message = {
+      player: username,
+      score: newTime,
+      message: "New high score achieved!",
+    };
+    mqttClient.publish("memory-game/scores", JSON.stringify(message));
+
+    res.json(user);
   } catch {
     res.status(500).send("Error on server");
   }
