@@ -1,120 +1,166 @@
 const API_URL = "http://localhost:3000";
+let startTime;
+let timerInterval;
+let socket;
+let isGameStarted = false;
+const cards = [
+  "🍎",
+  "🍎",
+  "🍌",
+  "🍌",
+  "🍇",
+  "🍇",
+  "🍓",
+  "🍓",
+  "🍒",
+  "🍒",
+  "🍉",
+  "🍉",
+  "🍏",
+  "🍏",
+  "🍑",
+  "🍑",
+];
+
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const seconds = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById("timer").innerText = seconds;
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  return document.getElementById("timer").innerText;
+}
 
 async function register() {
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
-
-  try {
-    const response = await fetch(`${API_URL}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: user, password: pass }),
-    });
-
-    const data = await response.text();
-    alert(data);
-  } catch (error) {
-    console.error("Error registering:", error);
-  }
+  const response = await fetch(`${API_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: user, password: pass }),
+  });
+  alert(await response.text());
 }
 
 async function login() {
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
+  const response = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: user, password: pass }),
+  });
 
-  try {
-    const response = await fetch(`${API_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: user, password: pass }),
-    });
-
-    if (response.ok) {
-      const message = await response.text();
-      alert(message);
-
-      document.getElementById("auth-section").style.display = "none";
-      document.getElementById("game-section").style.display = "block";
-      document.getElementById("room-id").innerText = "test room";
-
-      startSocket();
-      createBoard();
-      loadLeaderboard();
-    } else {
-      alert("Login failed");
-    }
-  } catch (error) {
-    console.error("Connection error:", error);
+  if (response.ok) {
+    document.getElementById("auth-section").style.display = "none";
+    document.getElementById("game-section").style.display = "block";
+    startSocket();
+    createBoard();
+    loadLeaderboard();
+  } else {
+    alert("Login failed");
   }
 }
 
-let socket;
-
 function startSocket() {
   socket = io(API_URL);
+  socket.on("connect", () => socket.emit("join-room", "game1"));
 
-  socket.on("connect", () => {
-    console.log("Connected to WS with ID:", socket.id);
-    socket.emit("join-room", "game1");
+  socket.on("flip-card", (data) => {
+    const allCards = document.querySelectorAll(".card");
+    allCards[data.index].innerText = data.symbol;
+    allCards[data.index].classList.add("flipped");
   });
 
-  // listen for card flips from other players
-  socket.on("flip-card", (data) => {
-    console.log("Another player flipped card:", data.index);
-
+  socket.on("match-result", (result) => {
     const allCards = document.querySelectorAll(".card");
-    const targetCard = allCards[data.index];
-
-    if (targetCard) {
-      targetCard.innerText = data.symbol;
-      targetCard.classList.add("flipped");
-
-      // hide after 1 second
+    if (result.match) {
+      result.indices.forEach((idx) => {
+        allCards[idx].style.background = "#2ecc71";
+        allCards[idx].onclick = null;
+      });
+    } else {
       setTimeout(() => {
-        targetCard.innerText = "?";
-        targetCard.classList.remove("flipped");
+        result.indices.forEach((idx) => {
+          allCards[idx].innerText = "?";
+          allCards[idx].classList.remove("flipped");
+        });
       }, 1000);
     }
   });
-}
 
-const cards = ["🍎", "🍎", "🍌", "🍌", "🍇", "🍇", "🍓", "🍓"];
+  socket.on("game-over", async (data) => {
+    const finalTime = stopTimer();
+    const username = document.getElementById("username").value;
+    alert(`${data.message} Czas: ${finalTime}s`);
+
+    await fetch(`${API_URL}/users/${username}/score`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newTime: parseInt(finalTime) }),
+    });
+    loadLeaderboard();
+  });
+}
 
 function createBoard() {
   const board = document.getElementById("board");
   board.innerHTML = "";
-
+  isGameStarted = false;
   cards.forEach((symbol, index) => {
     const card = document.createElement("div");
     card.classList.add("card");
-    card.dataset.index = index;
     card.innerText = "?";
-
     card.onclick = () => {
-      socket.emit("flip-card", {
-        index: index,
-        symbol: symbol,
-        room: "game1",
-      });
+      if (!isGameStarted) {
+        startTimer();
+        isGameStarted = true;
+      }
+      socket.emit("flip-card", { index, symbol, room: "game1" });
     };
     board.appendChild(card);
   });
 }
 
+async function searchPlayers() {
+  const term = document.getElementById("search-input").value;
+  const response = await fetch(`${API_URL}/users?search=${term}`);
+  renderLeaderboard(await response.json());
+}
+
+function renderLeaderboard(users) {
+  const list = document.getElementById("leaderboard-list");
+  list.innerHTML = "";
+  users.forEach((u) => {
+    const li = document.createElement("li");
+    li.innerText = `${u.username}: ${u.bestTime}s`;
+    list.appendChild(li);
+  });
+}
+
 async function loadLeaderboard() {
+  const response = await fetch(`${API_URL}/users`);
+  renderLeaderboard(await response.json());
+}
+
+async function deleteAccount() {
+  const username = document.getElementById("username").value;
+  if (!confirm(`Are you sure you want to delete account: ${username}?`)) return;
+
   try {
-    const response = await fetch(`${API_URL}/users`);
-    const users = await response.json();
-
-    const list = document.getElementById("leaderboard-list");
-    list.innerHTML = "";
-
-    users.forEach((u) => {
-      const li = document.createElement("li");
-      li.innerText = `${u.username}`;
-      list.appendChild(li);
+    const response = await fetch(`${API_URL}/users/${username}`, {
+      method: "DELETE",
     });
-  } catch (error) {
-    console.error("Leaderboard failed", error);
+
+    if (response.ok) {
+      alert("Account deleted.");
+      location.reload(); // Odśwież stronę, by wrócić do logowania
+    }
+  } catch (err) {
+    console.error("Delete failed", err);
   }
 }
