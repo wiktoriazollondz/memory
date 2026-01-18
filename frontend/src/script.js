@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000";
+const API_URL = "http://127.0.0.1:3000";
 let startTime;
 let timerInterval;
 let socket;
@@ -8,9 +8,11 @@ let currentRoom = "";
 let gameMode = "single";
 let currentBoard = [];
 
+document.addEventListener("submit", (e) => e.preventDefault());
+
 async function startSinglePlayer() {
   gameMode = "single";
-  currentRoom = "single_" + Math.random().toString(36).substring(7); // Unikalny pokój
+  currentRoom = "single_" + Math.random().toString(36).substring(7);
   await login();
 }
 
@@ -49,24 +51,50 @@ async function register() {
 async function login() {
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
+
   const response = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ username: user, password: pass }),
   });
 
   if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem("username", data.username);
+
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("game-section").style.display = "block";
+
     startSocket(currentRoom, gameMode);
-    createBoard();
+    loadComments();
     loadLeaderboard();
   } else {
-    alert("Błąd logowania");
+    alert("Błąd logowania: " + (await response.text()));
   }
 }
 
+async function logout() {
+  try {
+    await fetch(`${API_URL}/logout`, {
+      method: "POST",
+      credentials: "include", // Informuje serwer, który token unieważnić
+    });
+  } catch (err) {
+    console.error("Błąd wylogowania na serwerze", err);
+  }
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("username");
+  if (socket) socket.disconnect();
+  location.reload();
+}
+
 function startSocket(roomName, mode) {
+  currentRoom = roomName;
+  gameMode = mode;
+  localStorage.setItem("roomName", roomName);
+  localStorage.setItem("gameMode", mode);
   socket = io(API_URL);
   socket.on("connect", () => socket.emit("join-room", { roomName, mode }));
 
@@ -80,7 +108,7 @@ function startSocket(roomName, mode) {
 
   socket.on("turn-update", (activePlayerId) => {
     const turnInfo = document.getElementById("turn-info");
-    if (socket.id === activePlayerId) {
+    if (gameMode === "single" || socket.id === activePlayerId) {
       myTurn = true;
       turnInfo.innerText = "Twoja tura!";
       turnInfo.style.color = "green";
@@ -121,10 +149,14 @@ function startSocket(roomName, mode) {
 
     if (data.mode === "single") {
       alert(`GRATULACJE! Twój czas: ${finalTime}s`);
-      const username = document.getElementById("username").value;
+      const username = localStorage.getItem("username"); // lepiej brać z localStorage
+
       await fetch(`${API_URL}/users/${username}/score`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify({ newTime: parseInt(finalTime) }),
       });
       loadLeaderboard();
@@ -178,6 +210,93 @@ async function loadLeaderboard() {
   renderLeaderboard(await response.json());
 }
 
+async function addComment(event) {
+  if (event) event.preventDefault();
+  const text = document.getElementById("comment-input").value;
+  if (!text) return;
+
+  const response = await fetch(`${API_URL}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ text }),
+  });
+
+  if (response.ok) {
+    document.getElementById("comment-input").value = "";
+    loadComments();
+  } else {
+    alert("Błąd wysyłania: " + (await response.text()));
+  }
+}
+
+async function loadComments() {
+  try {
+    const response = await fetch(`${API_URL}/comments`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      console.error("Błąd pobierania komentarzy:", response.status);
+      return;
+    }
+
+    const comments = await response.json();
+    const list = document.getElementById("comments-list");
+    const currentUser = localStorage.getItem("username");
+
+    list.innerHTML = "";
+    comments.forEach((c) => {
+      const isOwner = c.username === currentUser;
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <strong>${c.username}</strong> (${c.date}): 
+        <span id="text-${c.id}">${c.text}</span>
+        ${
+          isOwner
+            ? `
+          <button type="button" onclick="editComment('${c.id}')">Edytuj</button>
+          <button type="button" onclick="deleteComment('${c.id}')">Usuń</button>
+        `
+            : ""
+        }
+      `;
+      list.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Błąd sieci:", err);
+  }
+}
+
+async function editComment(id) {
+  const newText = prompt("Wpisz nową treść komentarza:");
+  if (!newText) return;
+
+  const response = await fetch(`${API_URL}/comments/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // Przesyła ciasteczko autoryzacyjne
+    body: JSON.stringify({ text: newText }),
+  });
+
+  if (response.ok) loadComments();
+  else alert("Błąd edycji: " + (await response.text()));
+}
+
+async function deleteComment(id) {
+  if (!confirm("Usunąć komentarz?")) return;
+
+  const response = await fetch(`${API_URL}/comments/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (response.ok) loadComments();
+  else alert("Błąd usuwania: " + (await response.text()));
+}
+
 function backToMenu() {
   stopTimer();
   isGameStarted = false;
@@ -194,18 +313,48 @@ function backToMenu() {
 }
 
 async function deleteAccount() {
-  const username = document.getElementById("username").value;
-  if (!confirm(`Are you sure you want to delete account: ${username}?`)) return;
+  const username = localStorage.getItem("username");
+  if (!confirm(`Usunąć konto ${username}?`)) return;
 
-  try {
-    const response = await fetch(`${API_URL}/users/${username}`, {
-      method: "DELETE",
-    });
-    if (response.ok) {
-      alert("Account deleted.");
-      location.reload(); // powrót do logowania
-    }
-  } catch (err) {
-    console.error("Delete failed", err);
+  const response = await fetch(`${API_URL}/users/${username}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (response.ok) {
+    alert("Account deleted.");
+    logout();
+  } else {
+    alert("Błąd: " + (await response.text()));
   }
 }
+
+window.onload = function () {
+  const savedUser = localStorage.getItem("username");
+  const savedRoom = localStorage.getItem("roomName");
+  const savedMode = localStorage.getItem("gameMode");
+
+  if (savedUser) {
+    document.getElementById("auth-section").style.display = "none";
+    document.getElementById("game-section").style.display = "block";
+    document.getElementById("username").value = savedUser;
+
+    if (savedRoom && savedMode) {
+      currentRoom = savedRoom;
+      gameMode = savedMode;
+      startSocket(currentRoom, gameMode);
+    }
+
+    loadLeaderboard();
+    loadComments();
+  }
+};
+
+document
+  .getElementById("comment-input")
+  .addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addComment(e);
+    }
+  });

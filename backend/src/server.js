@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
@@ -5,15 +6,22 @@ const http = require("http");
 const { Server } = require("socket.io");
 const mqtt = require("mqtt");
 const cors = require("cors");
-
+const jwt = require("jsonwebtoken");
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://127.0.0.1:5500",
+    credentials: true,
+  })
+);
 app.use(express.json());
 
+const SECRET_KEY = process.env.JWT_SECRET;
 const DB_FILE = "./database.json";
 let users = [];
 const TOTAL_PAIRS = 8;
 let rooms = {};
+let comments = [];
 const cards = [
   "🍎",
   "🍎",
@@ -33,6 +41,21 @@ const cards = [
   "🍑",
 ];
 
+// zmiana odczytu
+if (fs.existsSync(DB_FILE)) {
+  const data = JSON.parse(fs.readFileSync(DB_FILE));
+  users = data.users || [];
+  comments = data.comments || [];
+}
+
+const saveToFile = () => {
+  const dataToSave = {
+    users: users,
+    comments: comments,
+  };
+  fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2));
+};
+
 function shuffle(array) {
   let shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -42,17 +65,6 @@ function shuffle(array) {
   return shuffled;
 }
 
-if (fs.existsSync(DB_FILE)) {
-  const data = fs.readFileSync(DB_FILE);
-  users = JSON.parse(data);
-}
-const saveToFile = () => {
-  fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2));
-};
-
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
-
 const resetRoom = (roomName) => {
   if (rooms[roomName]) {
     rooms[roomName].flippedCards = [];
@@ -61,6 +73,27 @@ const resetRoom = (roomName) => {
     rooms[roomName].gameStarted = false;
   }
 };
+
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
+const authenticateToken = (req, res, next) => {
+  // Pobranie tokena z ciasteczka zamiast z Headerów
+  const token = req.cookies.token;
+
+  if (!token) return res.status(401).send("Brak dostępu (brak ciasteczka)");
+
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.status(403).send("Sesja wygasła");
+    req.user = user;
+    next();
+  });
+};
+
+// ~~~~~~~~~~~~~~~~ WebSocket ~~~~~~~~~~~~~~~~
+
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
 io.on("connection", (socket) => {
   socket.on("join-room", (data) => {
@@ -167,10 +200,14 @@ io.on("connection", (socket) => {
   });
 });
 
+// ~~~~~~~~~~~~~~~~ mqtt ~~~~~~~~~~~~~~~~
+
 const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
 mqttClient.on("connect", () => {
   console.log("MQTT connected");
 });
+
+// ~~~~~~~~~~~~~~~~ CRUD ~~~~~~~~~~~~~~~~
 
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
@@ -185,9 +222,29 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const user = users.find((u) => u.username === username);
-  if (!user || !(await bcrypt.compare(password, user.password)))
-    return res.status(400).send("Failed");
-  res.status(200).send(`Welcome ${user.username}!`);
+
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.status(400).send("Błędny login lub hasło");
+  }
+
+  const token = jwt.sign({ username: user.username }, SECRET_KEY, {
+    expiresIn: "1h",
+  });
+
+  // ciasteczka
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    maxAge: 3600000, // 1h
+  });
+
+  res.status(200).json({ username: user.username });
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("token");
+  res.status(200).send("Logged out");
 });
 
 app.get("/users", (req, res) => {
@@ -204,7 +261,11 @@ app.get("/users", (req, res) => {
   );
 });
 
-app.patch("/users/:username/score", async (req, res) => {
+app.patch("/users/:username/score", authenticateToken, async (req, res) => {
+  if (req.user.username !== req.params.username) {
+    return res.status(403).send("Nie możesz zmieniać wyników innych graczy!");
+  }
+
   const { newTime } = req.body;
   const user = users.find((u) => u.username === req.params.username);
   if (user && (user.bestTime === null || newTime < user.bestTime)) {
@@ -218,10 +279,52 @@ app.patch("/users/:username/score", async (req, res) => {
   res.json(user);
 });
 
-app.delete("/users/:username", async (req, res) => {
+app.delete("/users/:username", authenticateToken, async (req, res) => {
+  if (req.user.username !== req.params.username) {
+    return res.status(403).send("Nie masz uprawnień");
+  }
   users = users.filter((u) => u.username !== req.params.username);
   saveToFile();
   res.json({ message: "Deleted" });
+});
+
+app.post("/comments", authenticateToken, (req, res) => {
+  const { text } = req.body;
+  const newComment = {
+    id: Date.now().toString(),
+    username: req.user.username,
+    text: text,
+    date: new Date().toLocaleString(),
+  };
+  comments.push(newComment);
+  saveToFile(); // <-- DODAJ TO, żeby komentarze się zapisywały
+  res.status(201).json(newComment);
+});
+
+app.get("/comments", (req, res) => {
+  res.json(comments);
+});
+
+app.patch("/comments/:id", authenticateToken, (req, res) => {
+  const comment = comments.find((c) => c.id === req.params.id);
+
+  if (!comment) return res.status(404).send("Nie znaleziono komentarza");
+  if (comment.username !== req.user.username)
+    return res.status(403).send("To nie Twój komentarz!");
+
+  comment.text = req.body.text;
+  res.json(comment);
+});
+
+app.delete("/comments/:id", authenticateToken, (req, res) => {
+  const commentIndex = comments.findIndex((c) => c.id === req.params.id);
+
+  if (commentIndex === -1) return res.status(404).send("Nie znaleziono");
+  if (comments[commentIndex].username !== req.user.username)
+    return res.status(403).send("Brak uprawnień");
+
+  comments.splice(commentIndex, 1);
+  res.json({ message: "Usunięto komentarz" });
 });
 
 server.listen(3000, () => console.log("Server running on port 3000"));

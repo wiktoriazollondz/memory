@@ -33,6 +33,13 @@
 
       <div id="board" class="board"></div>
 
+      <div id="comment-section">
+        <h3>Czat</h3>
+        <input type="text" id="comment-input" placeholder="Napisz coś..." />
+        <button type="button" onclick="addComment(event)">Wyślij</button>
+        <ul id="comments-list" style="list-style: none; padding: 0"></ul>
+      </div>
+
       <h3>Leaderboard</h3>
       <input
         type="text"
@@ -41,6 +48,7 @@
         onkeyup="searchPlayers()"
       />
       <ul id="leaderboard-list"></ul>
+      <button onclick="logout()">Wyloguj się</button>
       <button onclick="deleteAccount()">Delete account</button>
     </div>
 
