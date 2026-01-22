@@ -3,6 +3,7 @@ let startTime;
 let timerInterval;
 let socket;
 let isGameStarted = false;
+let isTimerRunning = false;
 let myTurn = false;
 let currentRoom = "";
 let gameMode = "single";
@@ -13,14 +14,23 @@ document.addEventListener("submit", (e) => e.preventDefault());
 async function startSinglePlayer() {
   gameMode = "single";
   currentRoom = "single_" + Math.random().toString(36).substring(7);
-  await login();
+
+  document.getElementById("menu-section").style.display = "none";
+  document.getElementById("game-section").style.display = "block";
+  startSocket(currentRoom, gameMode);
+  createBoard([]);
 }
 
 async function startMultiPlayer() {
+  const room = prompt("Podaj nazwę pokoju:", "game1");
+  if (!room) return;
   gameMode = "multi";
-  currentRoom = prompt("Podaj nazwę pokoju:", "game1");
-  if (!currentRoom) return;
-  await login();
+  currentRoom = room;
+
+  document.getElementById("menu-section").style.display = "none";
+  document.getElementById("game-section").style.display = "block";
+  startSocket(currentRoom, gameMode);
+  createBoard([]);
 }
 
 function startTimer() {
@@ -60,15 +70,13 @@ async function login() {
   });
 
   if (response.ok) {
-    const data = await response.json();
-    localStorage.setItem("username", data.username);
-
+    localStorage.setItem("username", user);
+    document.getElementById("logged-user-display").innerText = user;
     document.getElementById("auth-section").style.display = "none";
-    document.getElementById("game-section").style.display = "block";
-
-    startSocket(currentRoom, gameMode);
-    loadComments();
+    document.getElementById("menu-section").style.display = "block"; // Pokazujemy menu
+    document.getElementById("game-section").style.display = "none";
     loadLeaderboard();
+    loadComments();
   } else {
     alert("Błąd logowania: " + (await response.text()));
   }
@@ -78,16 +86,19 @@ async function logout() {
   try {
     await fetch(`${API_URL}/logout`, {
       method: "POST",
-      credentials: "include", // Informuje serwer, który token unieważnić
+      credentials: "include",
     });
   } catch (err) {
     console.error("Błąd wylogowania na serwerze", err);
   }
-
-  localStorage.removeItem("token");
   localStorage.removeItem("username");
-  if (socket) socket.disconnect();
-  location.reload();
+  localStorage.removeItem("roomName");
+  localStorage.removeItem("gameMode");
+  document.getElementById("menu-section").style.display = "none";
+  document.getElementById("game-section").style.display = "none";
+  document.getElementById("auth-section").style.display = "block";
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
 }
 
 function startSocket(roomName, mode) {
@@ -100,15 +111,41 @@ function startSocket(roomName, mode) {
 
   socket.on("start-game", (data) => {
     isGameStarted = true;
+    isTimerRunning = false;
     currentBoard = data.board;
     createBoard(data.board);
-    startTimer();
-    console.log("Game started by server");
+    const timerView = document.getElementById("timer-container");
+    const turnView = document.getElementById("turn-info");
+
+    if (gameMode === "single") {
+      timerView.style.display = "inline";
+      turnView.style.display = "none";
+      document.getElementById("timer").innerText = "0";
+    } else {
+      timerView.style.display = "none";
+      turnView.style.display = "inline";
+    }
+    stopTimer();
+  });
+
+  socket.on("player-left", () => {
+    isGameStarted = false;
+    stopTimer();
+    alert("Przeciwnik opuścił pokój. Oczekiwanie na nowego gracza...");
+    document.getElementById("turn-info").innerText =
+      "Oczekiwanie na przeciwnika...";
+    document.getElementById("turn-info").style.color = "orange";
   });
 
   socket.on("turn-update", (activePlayerId) => {
+    if (gameMode === "single") {
+      myTurn = true;
+      return;
+    }
     const turnInfo = document.getElementById("turn-info");
-    if (gameMode === "single" || socket.id === activePlayerId) {
+    turnInfo.style.display = "inline";
+
+    if (socket.id === activePlayerId) {
       myTurn = true;
       turnInfo.innerText = "Twoja tura!";
       turnInfo.style.color = "green";
@@ -129,7 +166,6 @@ function startSocket(roomName, mode) {
     const allCards = document.querySelectorAll(".card");
     if (result.match) {
       result.indices.forEach((idx) => {
-        allCards[idx].style.background = "#2ecc71";
         allCards[idx].onclick = null;
         allCards[idx].classList.add("matched");
       });
@@ -149,19 +185,16 @@ function startSocket(roomName, mode) {
 
     if (data.mode === "single") {
       alert(`GRATULACJE! Twój czas: ${finalTime}s`);
-      const username = localStorage.getItem("username"); // lepiej brać z localStorage
+      const username = localStorage.getItem("username");
 
       await fetch(`${API_URL}/users/${username}/score`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ newTime: parseInt(finalTime) }),
       });
       loadLeaderboard();
     } else {
-      // multiplayer
       if (socket.id === data.winnerId) {
         alert("GRATULACJE! Wygrałeś pojedynek!");
       } else {
@@ -181,8 +214,19 @@ function createBoard(boardLayout) {
     card.classList.add("card");
     card.innerText = "?";
     card.onclick = () => {
-      if (!isGameStarted || !myTurn || card.classList.contains("flipped"))
+      if (gameMode === "single" && isGameStarted && !isTimerRunning) {
+        startTimer();
+        isTimerRunning = true;
+      }
+
+      if (
+        !isGameStarted ||
+        !myTurn ||
+        card.classList.contains("flipped") ||
+        card.classList.contains("matched")
+      ) {
         return;
+      }
       socket.emit("flip-card", { index: index, room: currentRoom });
     };
     boardElement.appendChild(card);
@@ -252,7 +296,7 @@ async function loadComments() {
       const isOwner = c.username === currentUser;
       const li = document.createElement("li");
       li.innerHTML = `
-        <strong>${c.username}</strong> (${c.date}): 
+        <strong>${c.username}</strong>: 
         <span id="text-${c.id}">${c.text}</span>
         ${
           isOwner
@@ -300,16 +344,12 @@ async function deleteComment(id) {
 function backToMenu() {
   stopTimer();
   isGameStarted = false;
-  myTurn = false;
-  currentRoom = "";
-  if (socket) {
-    socket.disconnect();
-  }
+  if (socket) socket.disconnect();
 
+  document.getElementById("timer-container").style.display = "none";
+  document.getElementById("turn-info").style.display = "none";
   document.getElementById("game-section").style.display = "none";
-  document.getElementById("auth-section").style.display = "block";
-  document.getElementById("timer").innerText = "0";
-  document.getElementById("turn-info").innerText = "Loading...";
+  document.getElementById("menu-section").style.display = "block";
 }
 
 async function deleteAccount() {
@@ -331,20 +371,16 @@ async function deleteAccount() {
 
 window.onload = function () {
   const savedUser = localStorage.getItem("username");
-  const savedRoom = localStorage.getItem("roomName");
-  const savedMode = localStorage.getItem("gameMode");
+
+  document.getElementById("game-section").style.display = "none";
+  document.getElementById("menu-section").style.display = "none";
+  document.getElementById("auth-section").style.display = "block";
 
   if (savedUser) {
     document.getElementById("auth-section").style.display = "none";
-    document.getElementById("game-section").style.display = "block";
-    document.getElementById("username").value = savedUser;
-
-    if (savedRoom && savedMode) {
-      currentRoom = savedRoom;
-      gameMode = savedMode;
-      startSocket(currentRoom, gameMode);
-    }
-
+    document.getElementById("menu-section").style.display = "block";
+    document.getElementById("game-section").style.display = "none";
+    document.getElementById("logged-user-display").innerText = savedUser;
     loadLeaderboard();
     loadComments();
   }

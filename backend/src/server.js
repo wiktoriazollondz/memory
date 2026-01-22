@@ -12,7 +12,7 @@ app.use(
   cors({
     origin: "http://127.0.0.1:5500",
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -120,17 +120,16 @@ io.on("connection", (socket) => {
       rooms[roomName].gameStarted = true;
       socket.emit("start-game", { board: rooms[roomName].board });
     } else if (
-      rooms[roomName].players.length >= 2 &&
+      rooms[roomName].players.length === 2 &&
       !rooms[roomName].gameStarted
     ) {
       rooms[roomName].gameStarted = true;
       io.to(roomName).emit("start-game", { board: rooms[roomName].board });
     }
 
-    io.to(roomName).emit(
-      "turn-update",
-      rooms[roomName].players[rooms[roomName].currentPlayerIndex]
-    );
+    const activePlayer =
+      rooms[roomName].players[rooms[roomName].currentPlayerIndex];
+    io.to(roomName).emit("turn-update", activePlayer);
   });
 
   socket.on("flip-card", (data) => {
@@ -180,21 +179,26 @@ io.on("connection", (socket) => {
       room.flippedCards = [];
       io.to(data.room).emit(
         "turn-update",
-        room.players[room.currentPlayerIndex]
+        room.players[room.currentPlayerIndex],
       );
     }
   });
 
   socket.on("disconnect", () => {
     for (const roomName in rooms) {
-      rooms[roomName].players = rooms[roomName].players.filter(
-        (id) => id !== socket.id
-      );
+      const room = rooms[roomName];
+      if (room.players.includes(socket.id)) {
+        room.players = room.players.filter((id) => id !== socket.id);
 
-      if (rooms[roomName].players.length === 0) {
-        delete rooms[roomName];
-      } else {
-        resetRoom(roomName);
+        if (room.players.length === 0) {
+          delete rooms[roomName];
+        } else {
+          room.gameStarted = false;
+          room.currentPlayerIndex = 0;
+          room.matchedPairs = [];
+          room.flippedCards = [];
+          io.to(roomName).emit("player-left");
+        }
       }
     }
   });
@@ -254,10 +258,10 @@ app.get("/users", (req, res) => {
     .sort((a, b) => a.bestTime - b.bestTime);
   if (searchText)
     leaderboard = leaderboard.filter((u) =>
-      u.username.toLowerCase().includes(searchText.toLowerCase())
+      u.username.toLowerCase().includes(searchText.toLowerCase()),
     );
   res.json(
-    leaderboard.map((u) => ({ username: u.username, bestTime: u.bestTime }))
+    leaderboard.map((u) => ({ username: u.username, bestTime: u.bestTime })),
   );
 });
 
@@ -273,7 +277,7 @@ app.patch("/users/:username/score", authenticateToken, async (req, res) => {
     saveToFile();
     mqttClient.publish(
       "memory-game/scores",
-      JSON.stringify({ player: user.username, score: newTime })
+      JSON.stringify({ player: user.username, score: newTime }),
     );
   }
   res.json(user);

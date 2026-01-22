@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <title>Memory Game</title>
@@ -7,49 +7,67 @@
   <body>
     <div id="auth-section">
       <h2>Memory Game</h2>
-      <input type="text" id="username" placeholder="Login" />
-      <input type="password" id="password" placeholder="Hasło" />
-      <br /><br />
-      <button onclick="register()">Zarejestruj się</button>
-      <button onclick="startSinglePlayer()">Graj Singleplayer (na czas)</button>
-      <button onclick="startMultiPlayer()">Graj Multiplayer (pojedynki)</button>
+      <div class="loginForm">
+        <input type="text" id="username" placeholder="Login" />
+        <input type="password" id="password" placeholder="Hasło" />
+        <button onclick="login()">Zaloguj się</button>
+        <button onclick="register()">Zarejestruj się</button>
+      </div>
+    </div>
+
+    <div id="menu-section" style="display: none">
+      <div class="user-header">
+        Zalogowany jako: <strong id="logged-user-display"></strong>
+        <button onclick="logout()" class="small-btn">Wyloguj</button>
+      </div>
+
+      <div class="menu-container">
+        <button class="big-btn1" onclick="startSinglePlayer()">
+          Graj Singleplayer (na czas)
+        </button>
+        <button class="big-btn2" onclick="startMultiPlayer()">
+          Graj Multiplayer (pojedynki)
+        </button>
+      </div>
     </div>
 
     <div id="game-section" style="display: none">
+      <div class="optionButtons">
+        <button onclick="backToMenu()">Powrót do menu</button>
+        <button onclick="logout()">Wyloguj się</button>
+        <button id="delete" onclick="deleteAccount()">Usuń konto</button>
+      </div>
+
       <div id="game-info">
         <p>
-          Time: <span id="timer">0</span>s |
-          <span id="turn-info">Loading...</span>
+          <span id="timer-container" style="display: none"
+            >Czas: <span id="timer">0</span>s</span
+          >
+          <span id="turn-info" style="display: none">Oczekiwanie...</span>
         </p>
       </div>
 
-      <button
-        id="back-button"
-        onclick="backToMenu()"
-        style="margin-bottom: 10px"
-      >
-        Powrót do menu
-      </button>
+      <div class="page-layout">
+        <div id="board" class="board"></div>
 
-      <div id="board" class="board"></div>
+        <div id="comment-section" class="chat">
+          <h3>Czat</h3>
+          <input type="text" id="comment-input" placeholder="Napisz coś..." />
+          <button type="button" onclick="addComment(event)">Wyślij</button>
+          <ul id="comments-list"></ul>
+        </div>
 
-      <div id="comment-section">
-        <h3>Czat</h3>
-        <input type="text" id="comment-input" placeholder="Napisz coś..." />
-        <button type="button" onclick="addComment(event)">Wyślij</button>
-        <ul id="comments-list" style="list-style: none; padding: 0"></ul>
+        <div class="leaderboard">
+          <h3>Tablica wyników</h3>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Wyszukaj gracza..."
+            onkeyup="searchPlayers()"
+          />
+          <ul id="leaderboard-list"></ul>
+        </div>
       </div>
-
-      <h3>Leaderboard</h3>
-      <input
-        type="text"
-        id="search-input"
-        placeholder="Search player..."
-        onkeyup="searchPlayers()"
-      />
-      <ul id="leaderboard-list"></ul>
-      <button onclick="logout()">Wyloguj się</button>
-      <button onclick="deleteAccount()">Delete account</button>
     </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
