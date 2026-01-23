@@ -73,7 +73,7 @@ async function login() {
     localStorage.setItem("username", user);
     document.getElementById("logged-user-display").innerText = user;
     document.getElementById("auth-section").style.display = "none";
-    document.getElementById("menu-section").style.display = "block"; // Pokazujemy menu
+    document.getElementById("menu-section").style.display = "block";
     document.getElementById("game-section").style.display = "none";
     loadLeaderboard();
     loadComments();
@@ -114,9 +114,23 @@ function startSocket(roomName, mode) {
     isTimerRunning = false;
     currentBoard = data.board;
     createBoard(data.board);
+
+    const chatView = document.getElementById("chat-container");
+    const leaderboardView = document.getElementById("leaderboard-container");
+
+    if (gameMode === "single") {
+      chatView.style.display = "none";
+      leaderboardView.style.display = "block";
+      loadLeaderboard();
+    } else {
+      chatView.style.display = "block";
+      leaderboardView.style.display = "none";
+      document.getElementById("comments-list").innerHTML = "";
+      loadComments();
+    }
+
     const timerView = document.getElementById("timer-container");
     const turnView = document.getElementById("turn-info");
-
     if (gameMode === "single") {
       timerView.style.display = "inline";
       turnView.style.display = "none";
@@ -138,13 +152,15 @@ function startSocket(roomName, mode) {
   });
 
   socket.on("turn-update", (activePlayerId) => {
+    const turnInfo = document.getElementById("turn-info");
+
     if (gameMode === "single") {
       myTurn = true;
+      turnInfo.style.display = "none";
       return;
     }
-    const turnInfo = document.getElementById("turn-info");
-    turnInfo.style.display = "inline";
 
+    turnInfo.style.display = "inline";
     if (socket.id === activePlayerId) {
       myTurn = true;
       turnInfo.innerText = "Twoja tura!";
@@ -179,6 +195,15 @@ function startSocket(roomName, mode) {
     }
   });
 
+  socket.on("refresh-chat", () => {
+    console.log("Nowa wiadomość na czacie - odświeżam...");
+    loadComments();
+  });
+
+  socket.on("clear-chat-frontend", () => {
+    document.getElementById("comments-list").innerHTML = "";
+  });
+
   socket.on("game-over", async (data) => {
     const finalTime = stopTimer();
     isGameStarted = false;
@@ -201,6 +226,13 @@ function startSocket(roomName, mode) {
         alert("PRZEGRANA :( Powodzenia następnym razem!");
       }
     }
+    if (data.mode === "multi") {
+      setTimeout(() => {
+        document.getElementById("comments-list").innerHTML = "";
+        console.log("Czat sesji został wyczyszczony.");
+      }, 5000);
+    }
+
     document.getElementById("back-button").style.display = "block";
   });
 }
@@ -261,9 +293,7 @@ async function addComment(event) {
 
   const response = await fetch(`${API_URL}/comments`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ text }),
   });
@@ -271,6 +301,10 @@ async function addComment(event) {
   if (response.ok) {
     document.getElementById("comment-input").value = "";
     loadComments();
+
+    if (socket) {
+      socket.emit("send-message", { room: currentRoom });
+    }
   } else {
     alert("Błąd wysyłania: " + (await response.text()));
   }
@@ -341,13 +375,22 @@ async function deleteComment(id) {
   else alert("Błąd usuwania: " + (await response.text()));
 }
 
-function backToMenu() {
+async function backToMenu() {
   stopTimer();
   isGameStarted = false;
+
+  if (gameMode === "multi") {
+    await fetch(`${API_URL}/comments-clear`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    socket.emit("chat-clear-request", { room: currentRoom });
+  }
+
   if (socket) socket.disconnect();
 
-  document.getElementById("timer-container").style.display = "none";
-  document.getElementById("turn-info").style.display = "none";
+  document.getElementById("chat-container").style.display = "none";
+  document.getElementById("leaderboard-container").style.display = "none";
   document.getElementById("game-section").style.display = "none";
   document.getElementById("menu-section").style.display = "block";
 }

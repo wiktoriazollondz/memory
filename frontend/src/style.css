@@ -87,7 +87,7 @@ body {
 
 .page-layout {
   display: grid;
-  grid-template-columns: 3fr 1fr 1fr 0.5fr;
+  grid-template-columns: 3fr 1fr 0.5fr;
 }
 
 #game-section input {
@@ -165,9 +165,13 @@ body {
   list-style: none;
   padding-left: 1rem;
   padding-right: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
 }
 
-#comment-section button {
+.chat button {
   padding: 0.25rem;
   background-color: rgba(184, 104, 116, 0.788);
   color: white;
