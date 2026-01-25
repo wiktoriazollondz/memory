@@ -1,18 +1,19 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="UTF-8" />
     <title>Memory Game</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="auth-section">
       <h2>Memory Game</h2>
-      <div class="loginForm">
+      <form class="loginForm" onsubmit="event.preventDefault()">
         <input type="text" id="username" placeholder="Login" />
         <input type="password" id="password" placeholder="Hasło" />
-        <button onclick="login()">Zaloguj się</button>
-        <button onclick="register()">Zarejestruj się</button>
-      </div>
+        <button type="button" onclick="login()">Zaloguj się</button>
+        <button type="button" onclick="register()">Zarejestruj się</button>
+      </form>
     </div>
 
     <div id="menu-section" style="display: none">
@@ -33,9 +34,22 @@
 
     <div id="game-section" style="display: none">
       <div class="optionButtons">
-        <button onclick="backToMenu()">Powrót do menu</button>
-        <button onclick="logout()">Wyloguj się</button>
-        <button id="delete" onclick="deleteAccount()">Usuń konto</button>
+        <div class="button-group">
+          <button
+            id="back-button"
+            onclick="backToMenu()"
+            style="display: inline-block"
+          >
+            Powrót do menu
+          </button>
+          <button onclick="logout()">Wyloguj się</button>
+          <button id="delete" onclick="deleteAccount()">Usuń konto</button>
+        </div>
+
+        <div class="player-info-box">
+          <span id="game-user-display"></span><br />
+          <strong id="room-display"></strong>
+        </div>
       </div>
 
       <div id="game-info">

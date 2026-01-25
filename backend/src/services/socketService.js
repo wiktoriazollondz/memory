@@ -149,12 +149,12 @@ const socketHandler = (io) => {
       }
     });
 
-    socket.on("send-message", (data) => {
-      io.to(data.room).emit("refresh-chat");
-    });
-
     socket.on("chat-clear-request", (data) => {
       io.to(data.room).emit("clear-chat-frontend");
+    });
+
+    socket.on("chat-update", (data) => {
+      io.to(data.room).emit("refresh-chat");
     });
 
     socket.on("disconnect", () => {

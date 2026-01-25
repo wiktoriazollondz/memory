@@ -87,7 +87,10 @@ body {
 
 .page-layout {
   display: grid;
-  grid-template-columns: 3fr 1fr 0.5fr;
+  grid-template-columns: 1fr 350px;
+  gap: 20px;
+  align-items: start;
+  padding: 20px;
 }
 
 #game-section input {
@@ -99,7 +102,16 @@ body {
 
 .optionButtons {
   display: flex;
-  justify-content: end;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 15px;
+  margin-bottom: 10px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
 }
 
 .optionButtons button {
@@ -165,7 +177,7 @@ body {
   list-style: none;
   padding-left: 1rem;
   padding-right: 1rem;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
   display: flex;
   flex-direction: column-reverse;

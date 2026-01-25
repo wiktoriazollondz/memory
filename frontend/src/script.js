@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:3000";
+const API_URL = "/api";
 let startTime;
 let timerInterval;
 let socket;
@@ -8,44 +8,6 @@ let myTurn = false;
 let currentRoom = "";
 let gameMode = "single";
 let currentBoard = [];
-
-document.addEventListener("submit", (e) => e.preventDefault());
-
-async function startSinglePlayer() {
-  gameMode = "single";
-  currentRoom = "single_" + Math.random().toString(36).substring(7);
-
-  document.getElementById("menu-section").style.display = "none";
-  document.getElementById("game-section").style.display = "block";
-  startSocket(currentRoom, gameMode);
-  createBoard([]);
-}
-
-async function startMultiPlayer() {
-  const room = prompt("Podaj nazwę pokoju:", "game1");
-  if (!room) return;
-  gameMode = "multi";
-  currentRoom = room;
-
-  document.getElementById("menu-section").style.display = "none";
-  document.getElementById("game-section").style.display = "block";
-  startSocket(currentRoom, gameMode);
-  createBoard([]);
-}
-
-function startTimer() {
-  if (timerInterval) clearInterval(timerInterval);
-  startTime = Date.now();
-  timerInterval = setInterval(() => {
-    const seconds = Math.floor((Date.now() - startTime) / 1000);
-    document.getElementById("timer").innerText = seconds;
-  }, 1000);
-}
-
-function stopTimer() {
-  clearInterval(timerInterval);
-  return document.getElementById("timer").innerText;
-}
 
 async function register() {
   const user = document.getElementById("username").value;
@@ -70,97 +32,115 @@ async function login() {
   });
 
   if (response.ok) {
-    localStorage.setItem("username", user);
+    sessionStorage.setItem("username", user);
     document.getElementById("logged-user-display").innerText = user;
+
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("menu-section").style.display = "block";
     document.getElementById("game-section").style.display = "none";
+
     loadLeaderboard();
     loadComments();
   } else {
-    alert("Błąd logowania: " + (await response.text()));
+    alert("Błąd logowania!");
   }
 }
 
 async function logout() {
-  try {
-    await fetch(`${API_URL}/logout`, {
-      method: "POST",
+  if (gameMode === "multi") {
+    await fetch(`${API_URL}/comments-clear`, {
+      method: "DELETE",
       credentials: "include",
     });
-  } catch (err) {
-    console.error("Błąd wylogowania na serwerze", err);
   }
-  localStorage.removeItem("username");
-  localStorage.removeItem("roomName");
-  localStorage.removeItem("gameMode");
+  await fetch(`${API_URL}/logout`, { method: "POST", credentials: "include" });
+  sessionStorage.clear();
+  location.reload();
+}
+
+async function startSinglePlayer() {
+  gameMode = "single";
+  currentRoom = "single_" + Math.random().toString(36).substring(7);
+
+  document.getElementById("game-user-display").innerText =
+    "Gracz: " + sessionStorage.getItem("username");
   document.getElementById("menu-section").style.display = "none";
-  document.getElementById("game-section").style.display = "none";
-  document.getElementById("auth-section").style.display = "block";
-  document.getElementById("username").value = "";
-  document.getElementById("password").value = "";
+  document.getElementById("game-section").style.display = "block";
+  document.getElementById("back-button").style.display = "inline-block";
+
+  startSocket(currentRoom, gameMode);
+  createBoard([]);
+}
+
+async function startMultiPlayer() {
+  const room = prompt("Podaj nazwę pokoju:", "game1");
+  if (!room) return;
+
+  gameMode = "multi";
+  currentRoom = room;
+
+  document.getElementById("board").innerHTML = "";
+  document.getElementById("leaderboard-container").style.display = "none";
+  document.getElementById("chat-container").style.display = "block";
+  document.getElementById("menu-section").style.display = "none";
+  document.getElementById("game-section").style.display = "block";
+  document.getElementById("back-button").style.display = "inline-block";
+
+  const turnInfo = document.getElementById("turn-info");
+  turnInfo.style.display = "inline";
+  turnInfo.innerText = "Oczekiwanie na drugiego gracza...";
+  turnInfo.style.color = "orange";
+
+  document.getElementById("room-display").innerText = "Pokój ID: " + room;
+  document.getElementById("game-user-display").innerText =
+    "Gracz: " + sessionStorage.getItem("username");
+
+  startSocket(currentRoom, gameMode);
 }
 
 function startSocket(roomName, mode) {
   currentRoom = roomName;
-  gameMode = mode;
-  localStorage.setItem("roomName", roomName);
-  localStorage.setItem("gameMode", mode);
-  socket = io(API_URL);
+  socket = io();
   socket.on("connect", () => socket.emit("join-room", { roomName, mode }));
 
   socket.on("start-game", (data) => {
     isGameStarted = true;
+    myTurn = gameMode === "single";
     isTimerRunning = false;
     currentBoard = data.board;
     createBoard(data.board);
 
     const chatView = document.getElementById("chat-container");
     const leaderboardView = document.getElementById("leaderboard-container");
-
-    if (gameMode === "single") {
-      chatView.style.display = "none";
-      leaderboardView.style.display = "block";
-      loadLeaderboard();
-    } else {
-      chatView.style.display = "block";
-      leaderboardView.style.display = "none";
-      document.getElementById("comments-list").innerHTML = "";
-      loadComments();
-    }
-
     const timerView = document.getElementById("timer-container");
     const turnView = document.getElementById("turn-info");
+    const backBtn = document.getElementById("back-button");
+
+    if (backBtn) backBtn.style.display = "inline-block";
+
     if (gameMode === "single") {
-      timerView.style.display = "inline";
-      turnView.style.display = "none";
-      document.getElementById("timer").innerText = "0";
+      if (chatView) chatView.style.display = "none";
+      if (leaderboardView) leaderboardView.style.display = "block";
+      if (timerView) timerView.style.display = "inline";
+      if (turnView) turnView.style.display = "none";
+      loadLeaderboard();
     } else {
-      timerView.style.display = "none";
-      turnView.style.display = "inline";
+      if (chatView) chatView.style.display = "block";
+      if (leaderboardView) leaderboardView.style.display = "none";
+      if (timerView) timerView.style.display = "none";
+      if (turnView) {
+        turnView.style.display = "inline";
+        turnView.innerText = "Gra się rozpoczęła!";
+        turnView.style.color = "blue";
+      }
+      loadComments();
     }
     stopTimer();
-  });
-
-  socket.on("player-left", () => {
-    isGameStarted = false;
-    stopTimer();
-    alert("Przeciwnik opuścił pokój. Oczekiwanie na nowego gracza...");
-    document.getElementById("turn-info").innerText =
-      "Oczekiwanie na przeciwnika...";
-    document.getElementById("turn-info").style.color = "orange";
   });
 
   socket.on("turn-update", (activePlayerId) => {
+    if (mode === "single") return;
     const turnInfo = document.getElementById("turn-info");
-
-    if (gameMode === "single") {
-      myTurn = true;
-      turnInfo.style.display = "none";
-      return;
-    }
-
-    turnInfo.style.display = "inline";
     if (socket.id === activePlayerId) {
       myTurn = true;
       turnInfo.innerText = "Twoja tura!";
@@ -173,105 +153,80 @@ function startSocket(roomName, mode) {
   });
 
   socket.on("flip-card", (data) => {
-    const allCards = document.querySelectorAll(".card");
-    allCards[data.index].innerText = data.symbol;
-    allCards[data.index].classList.add("flipped");
+    const cards = document.querySelectorAll(".card");
+    cards[data.index].innerText = data.symbol;
+    cards[data.index].classList.add("flipped");
   });
 
   socket.on("match-result", (result) => {
-    const allCards = document.querySelectorAll(".card");
+    const cards = document.querySelectorAll(".card");
     if (result.match) {
-      result.indices.forEach((idx) => {
-        allCards[idx].onclick = null;
-        allCards[idx].classList.add("matched");
-      });
+      result.indices.forEach((idx) => cards[idx].classList.add("matched"));
     } else {
       setTimeout(() => {
         result.indices.forEach((idx) => {
-          allCards[idx].innerText = "?";
-          allCards[idx].classList.remove("flipped");
+          cards[idx].innerText = "?";
+          cards[idx].classList.remove("flipped");
         });
       }, 1000);
     }
   });
 
-  socket.on("refresh-chat", () => {
-    console.log("Nowa wiadomość na czacie - odświeżam...");
-    loadComments();
-  });
+  socket.on("refresh-chat", loadComments);
 
-  socket.on("clear-chat-frontend", () => {
-    document.getElementById("comments-list").innerHTML = "";
-  });
+  socket.on(
+    "clear-chat-frontend",
+    () => (document.getElementById("comments-list").innerHTML = ""),
+  );
 
   socket.on("game-over", async (data) => {
-    const finalTime = stopTimer();
+    const time = stopTimer();
     isGameStarted = false;
+    alert(
+      data.winnerId === socket.id || mode === "single"
+        ? "WYGRANA!"
+        : "PRZEGRANA!",
+    );
 
-    if (data.mode === "single") {
-      alert(`GRATULACJE! Twój czas: ${finalTime}s`);
-      const username = localStorage.getItem("username");
-
-      await fetch(`${API_URL}/users/${username}/score`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ newTime: parseInt(finalTime) }),
-      });
+    if (mode === "single") {
+      await fetch(
+        `${API_URL}/users/${sessionStorage.getItem("username")}/score`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ newTime: parseInt(time) }),
+        },
+      );
       loadLeaderboard();
-    } else {
-      if (socket.id === data.winnerId) {
-        alert("GRATULACJE! Wygrałeś pojedynek!");
-      } else {
-        alert("PRZEGRANA :( Powodzenia następnym razem!");
-      }
     }
-    if (data.mode === "multi") {
-      setTimeout(() => {
-        document.getElementById("comments-list").innerHTML = "";
-        console.log("Czat sesji został wyczyszczony.");
-      }, 5000);
-    }
-
     document.getElementById("back-button").style.display = "block";
   });
 }
 
 function createBoard(boardLayout) {
-  const boardElement = document.getElementById("board");
-  boardElement.innerHTML = "";
-
+  const board = document.getElementById("board");
+  board.innerHTML = "";
   boardLayout.forEach((symbol, index) => {
     const card = document.createElement("div");
-    card.classList.add("card");
+    card.className = "card";
     card.innerText = "?";
     card.onclick = () => {
-      if (gameMode === "single" && isGameStarted && !isTimerRunning) {
+      if (!isGameStarted || !myTurn || card.classList.contains("flipped"))
+        return;
+      if (gameMode === "single" && !isTimerRunning) {
         startTimer();
         isTimerRunning = true;
       }
-
-      if (
-        !isGameStarted ||
-        !myTurn ||
-        card.classList.contains("flipped") ||
-        card.classList.contains("matched")
-      ) {
-        return;
-      }
       socket.emit("flip-card", { index: index, room: currentRoom });
     };
-    boardElement.appendChild(card);
+    board.appendChild(card);
   });
 }
 
-async function searchPlayers() {
-  const term = document.getElementById("search-input").value;
-  const response = await fetch(`${API_URL}/users?search=${term}`);
-  renderLeaderboard(await response.json());
-}
-
-function renderLeaderboard(users) {
+async function loadLeaderboard() {
+  const response = await fetch(`${API_URL}/users`);
+  const users = await response.json();
   const list = document.getElementById("leaderboard-list");
   list.innerHTML = "";
   users.forEach((u) => {
@@ -281,33 +236,17 @@ function renderLeaderboard(users) {
   });
 }
 
-async function loadLeaderboard() {
-  const response = await fetch(`${API_URL}/users`);
-  renderLeaderboard(await response.json());
-}
-
-async function addComment(event) {
-  if (event) event.preventDefault();
-  const text = document.getElementById("comment-input").value;
-  if (!text) return;
-
-  const response = await fetch(`${API_URL}/comments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ text }),
+async function searchPlayers() {
+  const term = document.getElementById("search-input").value;
+  const response = await fetch(`${API_URL}/users?search=${term}`);
+  const users = await response.json();
+  const list = document.getElementById("leaderboard-list");
+  list.innerHTML = "";
+  users.forEach((u) => {
+    const li = document.createElement("li");
+    li.innerText = `${u.username}: ${u.bestTime}s`;
+    list.appendChild(li);
   });
-
-  if (response.ok) {
-    document.getElementById("comment-input").value = "";
-    loadComments();
-
-    if (socket) {
-      socket.emit("send-message", { room: currentRoom });
-    }
-  } else {
-    alert("Błąd wysyłania: " + (await response.text()));
-  }
 }
 
 async function loadComments() {
@@ -315,106 +254,120 @@ async function loadComments() {
     const response = await fetch(`${API_URL}/comments`, {
       credentials: "include",
     });
-
-    if (!response.ok) {
-      console.error("Błąd pobierania komentarzy:", response.status);
-      return;
-    }
+    if (!response.ok) return;
 
     const comments = await response.json();
     const list = document.getElementById("comments-list");
-    const currentUser = localStorage.getItem("username");
+    if (!list) return;
 
+    const currentUser = sessionStorage.getItem("username");
     list.innerHTML = "";
+
     comments.forEach((c) => {
-      const isOwner = c.username === currentUser;
       const li = document.createElement("li");
-      li.innerHTML = `
-        <strong>${c.username}</strong>: 
-        <span id="text-${c.id}">${c.text}</span>
-        ${
-          isOwner
-            ? `
-          <button type="button" onclick="editComment('${c.id}')">Edytuj</button>
-          <button type="button" onclick="deleteComment('${c.id}')">Usuń</button>
-        `
-            : ""
-        }
-      `;
+      // Budujemy treść
+      let content = `<strong>${c.username}</strong>: ${c.text}`;
+
+      if (c.username === currentUser) {
+        content += ` <button onclick="editComment('${c.id}')">Edytuj</button>
+                             <button onclick="deleteComment('${c.id}')">Usuń</button>`;
+      }
+
+      li.innerHTML = content;
       list.appendChild(li);
     });
   } catch (err) {
-    console.error("Błąd sieci:", err);
+    console.error("Czat padł:", err);
+  }
+}
+
+async function addComment(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById("comment-input");
+  if (!input || !input.value) return;
+
+  const response = await fetch(`${API_URL}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ text: input.value }),
+  });
+
+  if (response.ok) {
+    input.value = "";
+    loadComments();
+    if (socket && socket.connected) {
+      socket.emit("chat-update", { room: currentRoom });
+    }
+  } else {
+    alert("Błąd wysyłania: " + (await response.text()));
   }
 }
 
 async function editComment(id) {
-  const newText = prompt("Wpisz nową treść komentarza:");
+  const newText = prompt("Nowa treść:");
   if (!newText) return;
-
   const response = await fetch(`${API_URL}/comments/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    credentials: "include", // Przesyła ciasteczko autoryzacyjne
+    credentials: "include",
     body: JSON.stringify({ text: newText }),
   });
-
-  if (response.ok) loadComments();
-  else alert("Błąd edycji: " + (await response.text()));
+  if (response.ok) {
+    loadComments();
+    socket.emit("chat-update", { room: currentRoom });
+  }
 }
 
 async function deleteComment(id) {
-  if (!confirm("Usunąć komentarz?")) return;
-
+  if (!confirm("Usunąć?")) return;
   const response = await fetch(`${API_URL}/comments/${id}`, {
     method: "DELETE",
     credentials: "include",
   });
-
-  if (response.ok) loadComments();
-  else alert("Błąd usuwania: " + (await response.text()));
+  if (response.ok) {
+    loadComments();
+    socket.emit("chat-update", { room: currentRoom });
+  }
 }
 
-async function backToMenu() {
+function backToMenu() {
   stopTimer();
   isGameStarted = false;
 
+  document.getElementById("board").innerHTML = "";
+  document.getElementById("turn-info").innerText = "";
+  document.getElementById("room-display").innerText = "";
+  document.getElementById("game-user-display").innerText = "";
+
   if (gameMode === "multi") {
-    await fetch(`${API_URL}/comments-clear`, {
+    fetch(`${API_URL}/comments-clear`, {
       method: "DELETE",
       credentials: "include",
     });
-    socket.emit("chat-clear-request", { room: currentRoom });
   }
-
   if (socket) socket.disconnect();
 
-  document.getElementById("chat-container").style.display = "none";
-  document.getElementById("leaderboard-container").style.display = "none";
   document.getElementById("game-section").style.display = "none";
   document.getElementById("menu-section").style.display = "block";
 }
 
-async function deleteAccount() {
-  const username = localStorage.getItem("username");
-  if (!confirm(`Usunąć konto ${username}?`)) return;
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const seconds = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById("timer").innerText = seconds;
+  }, 1000);
+}
 
-  const response = await fetch(`${API_URL}/users/${username}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-
-  if (response.ok) {
-    alert("Account deleted.");
-    logout();
-  } else {
-    alert("Błąd: " + (await response.text()));
-  }
+function stopTimer() {
+  clearInterval(timerInterval);
+  return document.getElementById("timer").innerText;
 }
 
 window.onload = function () {
-  const savedUser = localStorage.getItem("username");
-
+  const savedUser = sessionStorage.getItem("username");
   document.getElementById("game-section").style.display = "none";
   document.getElementById("menu-section").style.display = "none";
   document.getElementById("auth-section").style.display = "block";
@@ -422,18 +375,7 @@ window.onload = function () {
   if (savedUser) {
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("menu-section").style.display = "block";
-    document.getElementById("game-section").style.display = "none";
     document.getElementById("logged-user-display").innerText = savedUser;
     loadLeaderboard();
-    loadComments();
   }
 };
-
-document
-  .getElementById("comment-input")
-  .addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addComment(e);
-    }
-  });

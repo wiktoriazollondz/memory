@@ -39,5 +39,5 @@ exports.deleteComment = (req, res) => {
 exports.clearAllComments = (req, res) => {
   comments.length = 0;
   saveToFile();
-  res.json({ message: "Baza danych czatu została wyczyszczona." });
+  res.json({ message: "Czat wyczyszczony" });
 };
