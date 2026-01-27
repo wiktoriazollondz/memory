@@ -15,6 +15,17 @@ app.use(cors({ origin: "http://127.0.0.1:5500", credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+socketHandler(io);
+
+authCtrl.initMQTT(io);
+
 app.post("/register", authCtrl.register);
 app.post("/login", authCtrl.login);
 app.post("/logout", authCtrl.logout);
@@ -28,15 +39,6 @@ app.patch("/comments/:id", authenticateToken, commentCtrl.editComment);
 app.delete("/comments/:id", authenticateToken, commentCtrl.deleteComment);
 app.delete("/comments-clear", authenticateToken, commentCtrl.clearAllComments);
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
-
-socketHandler(io);
-
 server.listen(3000, "0.0.0.0", () => {
-  console.log("Serwer i WebSockets działają na porcie 3000");
+  console.log("Serwer działa na porcie 3000");
 });

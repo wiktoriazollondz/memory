@@ -59,6 +59,11 @@ async function logout() {
 }
 
 async function startSinglePlayer() {
+  stopTimer();
+  isTimerRunning = false;
+  const timerElem = document.getElementById("timer");
+  if (timerElem) timerElem.innerText = "0";
+
   gameMode = "single";
   currentRoom = "single_" + Math.random().toString(36).substring(7);
 
@@ -172,6 +177,12 @@ function startSocket(roomName, mode) {
     }
   });
 
+  socket.on("global-record-notify", (data) => {
+    showGlobalNotification(
+      `Nowy wynik! ${data.user} ukończył grę w ${data.score}s!`,
+    );
+  });
+
   socket.on("refresh-chat", loadComments);
 
   socket.on(
@@ -222,6 +233,17 @@ function createBoard(boardLayout) {
     };
     board.appendChild(card);
   });
+}
+
+function showGlobalNotification(text) {
+  const notification = document.createElement("div");
+  notification.innerText = text;
+  notification.classList.add("global-notification");
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.remove();
+  }, 4000);
 }
 
 async function loadLeaderboard() {
@@ -334,11 +356,15 @@ async function deleteComment(id) {
 function backToMenu() {
   stopTimer();
   isGameStarted = false;
+  isTimerRunning = false;
 
   document.getElementById("board").innerHTML = "";
   document.getElementById("turn-info").innerText = "";
   document.getElementById("room-display").innerText = "";
   document.getElementById("game-user-display").innerText = "";
+
+  const timerElem = document.getElementById("timer");
+  if (timerElem) timerElem.innerText = "0";
 
   if (gameMode === "multi") {
     fetch(`${API_URL}/comments-clear`, {

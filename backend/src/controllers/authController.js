@@ -3,16 +3,35 @@ const jwt = require("jsonwebtoken");
 const mqtt = require("mqtt");
 const { users, saveToFile } = require("../database");
 
-// konfiguracja MQTT dla publikowania wyników
 const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
+const topic = "game/global/scores"; // temat
 
 mqttClient.on("connect", () => {
-  console.log("MQTT: Połączono z brokerem HiveMQ (authController)");
+  console.log("MQTT: Połączono z brokerem HiveMQ");
+  mqttClient.subscribe(topic);
 });
 
-mqttClient.on("error", (err) => {
-  console.error("MQTT: Błąd połączenia:", err);
-});
+// funkcja inicjująca nasłuchiwanie MQTT
+exports.initMQTT = (io) => {
+  mqttClient.on("message", (receivedTopic, message) => {
+    if (receivedTopic === topic) {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log(
+          `MQTT: Nowy wynik odebrany: ${data.username} - ${data.score}s`,
+        );
+
+        // przesłanie powiadomienia do wszystkich przez Socket.io
+        io.emit("global-record-notify", {
+          user: data.username,
+          score: data.score,
+        });
+      } catch (e) {
+        console.error("MQTT: Błąd parsowania wiadomości", e);
+      }
+    }
+  });
+};
 
 exports.register = async (req, res) => {
   const { username, password } = req.body;
@@ -63,18 +82,19 @@ exports.getLeaderboard = (req, res) => {
 };
 
 exports.updateScore = async (req, res) => {
-  if (req.user.username !== req.params.username) {
+  const { username } = req.params;
+  const { newTime } = req.body;
+
+  if (req.user.username !== username) {
     return res.status(403).send("Nie możesz zmieniać wyników innych graczy!");
   }
-  const { newTime } = req.body;
-  const user = users.find((u) => u.username === req.params.username);
+
+  const user = users.find((u) => u.username === username);
   if (user && (user.bestTime === null || newTime < user.bestTime)) {
     user.bestTime = newTime;
     saveToFile();
-    mqttClient.publish(
-      "memory-game/scores",
-      JSON.stringify({ player: user.username, score: newTime }),
-    );
+    const payload = JSON.stringify({ username: user.username, score: newTime });
+    mqttClient.publish(topic, payload);
   }
   res.json(user);
 };
