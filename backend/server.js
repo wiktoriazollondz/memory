@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const socketHandler = require("./src/services/socketService");
 const authCtrl = require("./src/controllers/authController");
 const commentCtrl = require("./src/controllers/commentController");
+const historyCtrl = require("./src/controllers/historyController");
 const authenticateToken = require("./src/middleware/authMiddleware");
 
 const app = express();
@@ -26,9 +27,10 @@ socketHandler(io);
 
 authCtrl.initMQTT(io);
 
-app.post("/register", authCtrl.register);
 app.post("/login", authCtrl.login);
 app.post("/logout", authCtrl.logout);
+
+app.post("/register", authCtrl.register);
 app.get("/users", authCtrl.getLeaderboard);
 app.patch("/users/:username/score", authenticateToken, authCtrl.updateScore);
 app.delete("/users/:username", authenticateToken, authCtrl.deleteAccount);
@@ -38,6 +40,11 @@ app.post("/comments", authenticateToken, commentCtrl.postComment);
 app.patch("/comments/:id", authenticateToken, commentCtrl.editComment);
 app.delete("/comments/:id", authenticateToken, commentCtrl.deleteComment);
 app.delete("/comments-clear", authenticateToken, commentCtrl.clearAllComments);
+
+app.get("/history", authenticateToken, historyCtrl.getHistory);
+app.post("/history", authenticateToken, historyCtrl.postHistory);
+app.patch("/history/:id", authenticateToken, historyCtrl.updateHistoryNote);
+app.delete("/history/:id", authenticateToken, historyCtrl.deleteHistory);
 
 server.listen(3000, "0.0.0.0", () => {
   console.log("Serwer działa na porcie 3000");

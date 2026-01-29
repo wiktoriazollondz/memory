@@ -19,7 +19,8 @@
     <div id="menu-section" style="display: none">
       <div class="user-header">
         Zalogowany jako: <strong id="logged-user-display"></strong>
-        <button onclick="logout()" class="small-btn">Wyloguj</button>
+        <button onclick="logout()" class="small-btn">Wyloguj się</button>
+        <button id="delete" class="small-btn" onclick="deleteAccount()">Usuń konto</button>  
       </div>
 
       <div class="menu-container">
@@ -42,9 +43,29 @@
           >
             Powrót do menu
           </button>
-          <button onclick="logout()">Wyloguj się</button>
-          <button id="delete" onclick="deleteAccount()">Usuń konto</button>
-        </div>
+          <button onclick="openHistory()" class="history-btn">Historia gier</button>
+          <button onclick="logout()">Wyloguj się</button> 
+
+          <div id="history-modal" class="modal-overlay">
+            <div class="modal-content">
+              <span class="close-modal" onclick="closeHistory()">&times;</span>
+              <h3>Twoja historia gier</h3>
+              <div class="history-table-container">
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Wynik</th>
+                      <th>Notatka</th>
+                      <th>Akcje</th>
+                    </tr>
+                  </thead>
+                  <tbody id="history-list">
+                    </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
 
         <div class="player-info-box">
           <span id="game-user-display"></span><br />

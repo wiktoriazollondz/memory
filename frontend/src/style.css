@@ -3,10 +3,12 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 #auth-section h2 {
-  height: 40svh;
+  height: 40vh;
   display: flex;
   justify-content: center;
   font-size: 5rem;
@@ -60,36 +62,37 @@ body {
   gap: 20px;
 }
 
-.big-btn1 {
+.big-btn1,
+.big-btn2 {
   padding: 8rem 3rem;
   font-size: 2rem;
   cursor: pointer;
-  background-color: rgb(113, 193, 219);
   color: white;
   border: none;
   border-radius: 30px;
 }
 
+.big-btn1 {
+  background-color: rgb(113, 193, 219);
+}
 .big-btn2 {
-  padding: 8rem 3rem;
-  font-size: 2rem;
-  cursor: pointer;
   background-color: lightcoral;
-  color: white;
-  border: none;
-  border-radius: 30px;
+}
+.big-btn1:hover,
+.big-btn2:hover {
+  transform: scale(1.05);
 }
 
 .small-btn {
   margin-left: 10px;
   padding: 5px 10px;
+  cursor: pointer;
 }
 
 .page-layout {
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 20px;
-  align-items: start;
   padding: 20px;
 }
 
@@ -102,11 +105,15 @@ body {
 
 .optionButtons {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
+  flex-direction: column;
+  padding: 15px 25px;
   border-radius: 15px;
   margin-bottom: 10px;
+}
+
+.player-info-box {
+  position: fixed;
+  right: 1rem;
 }
 
 .button-group {
@@ -165,12 +172,24 @@ body {
   background-color: #2ecc71;
 }
 
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.leaderboard,
 .chat {
+  padding: 20px;
+  border-radius: 15px;
   color: white;
-  background-color: rgba(214, 161, 169, 0.788);
-  padding: 1rem;
-  margin-right: 1rem;
-  border-radius: 10px;
+}
+
+.leaderboard {
+  background-color: rgba(103, 103, 177, 0.9);
+}
+.chat {
+  background-color: rgba(214, 161, 169, 0.9);
 }
 
 #comments-list {
@@ -190,14 +209,6 @@ body {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-}
-
-.leaderboard {
-  color: white;
-  background-color: rgba(103, 103, 177, 0.753);
-  padding: 1rem;
-  margin-left: 1rem;
-  border-radius: 10px;
 }
 
 #leaderboard-list {
@@ -238,4 +249,49 @@ body {
     opacity: 0;
     top: -50px;
   }
+}
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.history-table th,
+.history-table td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.history-table button {
+  background-color: white;
 }

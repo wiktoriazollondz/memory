@@ -58,11 +58,38 @@ async function logout() {
   location.reload();
 }
 
+async function deleteAccount() {
+  const username = sessionStorage.getItem("username");
+  if (!username) return;
+
+  const confirmed = confirm("Czy na pewno chcesz usunąć konto?");
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`${API_URL}/users/${username}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      alert("Twoje konto zostało usunięte!");
+      sessionStorage.clear();
+      location.reload();
+    } else {
+      const errorText = await response.text();
+      alert("Błąd podczas usuwania konta: " + errorText);
+    }
+  } catch (err) {
+    console.error("Błąd sieci:", err);
+    alert("Nie udało się połączyć z serwerem.");
+  }
+}
+
 async function startSinglePlayer() {
   stopTimer();
   isTimerRunning = false;
-  const timerElem = document.getElementById("timer");
-  if (timerElem) timerElem.innerText = "0";
+  isGameStarted = false;
+  document.getElementById("timer").innerText = "0";
 
   gameMode = "single";
   currentRoom = "single_" + Math.random().toString(36).substring(7);
@@ -112,6 +139,7 @@ function startSocket(roomName, mode) {
     isGameStarted = true;
     myTurn = gameMode === "single";
     isTimerRunning = false;
+    document.getElementById("timer").innerText = "0";
     currentBoard = data.board;
     createBoard(data.board);
 
@@ -193,6 +221,7 @@ function startSocket(roomName, mode) {
   socket.on("game-over", async (data) => {
     const time = stopTimer();
     isGameStarted = false;
+    isTimerRunning = false;
     alert(
       data.winnerId === socket.id || mode === "single"
         ? "WYGRANA!"
@@ -209,6 +238,17 @@ function startSocket(roomName, mode) {
           body: JSON.stringify({ newTime: parseInt(time) }),
         },
       );
+
+      await fetch(`${API_URL}/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          score: parseInt(time),
+          mode: "single",
+        }),
+      });
+
       loadLeaderboard();
     }
     document.getElementById("back-button").style.display = "block";
@@ -287,7 +327,6 @@ async function loadComments() {
 
     comments.forEach((c) => {
       const li = document.createElement("li");
-      // Budujemy treść
       let content = `<strong>${c.username}</strong>: ${c.text}`;
 
       if (c.username === currentUser) {
@@ -388,12 +427,86 @@ function startTimer() {
 }
 
 function stopTimer() {
-  clearInterval(timerInterval);
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
   return document.getElementById("timer").innerText;
 }
 
-window.onload = function () {
+function openHistory() {
+  document.getElementById("history-modal").style.display = "flex";
+  loadHistory();
+}
+
+function closeHistory() {
+  document.getElementById("history-modal").style.display = "none";
+}
+
+async function loadHistory() {
+  const response = await fetch(`${API_URL}/history`, {
+    credentials: "include",
+  });
+  if (!response.ok) return;
+
+  const entries = await response.json();
+  const list = document.getElementById("history-list");
+  list.innerHTML = "";
+
+  entries.reverse().forEach((h) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${h.date.split(",")[0]}</td>
+      <td><strong>${h.score}s</strong></td>
+      <td><small>${h.note || "---"}</small></td>
+      <td>
+        <button onclick="editHistoryNote('${h.id}')">📝</button>
+        <button onclick="deleteHistoryEntry('${h.id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
+      </td>
+    `;
+    list.appendChild(row);
+  });
+}
+
+async function editHistoryNote(id) {
+  const newNote = prompt("Dodaj notatkę do tej gry:");
+  if (newNote === null) return;
+
+  const response = await fetch(`${API_URL}/history/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ note: newNote }),
+  });
+
+  if (response.ok) {
+    loadHistory();
+  }
+}
+
+async function deleteHistoryEntry(id) {
+  if (!confirm("Czy na pewno chcesz usunąć ten wynik z historii?")) return;
+
+  const response = await fetch(`${API_URL}/history/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (response.ok) {
+    loadHistory();
+  }
+}
+
+window.onclick = function (event) {
+  const modal = document.getElementById("history-modal");
+  if (event.target === modal) {
+    closeHistory();
+  }
+};
+
+window.addEventListener("load", () => {
   const savedUser = sessionStorage.getItem("username");
+
   document.getElementById("game-section").style.display = "none";
   document.getElementById("menu-section").style.display = "none";
   document.getElementById("auth-section").style.display = "block";
@@ -404,4 +517,4 @@ window.onload = function () {
     document.getElementById("logged-user-display").innerText = savedUser;
     loadLeaderboard();
   }
-};
+});
