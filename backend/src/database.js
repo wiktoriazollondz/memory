@@ -6,6 +6,16 @@ let comments = [];
 let rooms = {};
 let history = [];
 
+let decks = [
+  {
+    id: "default",
+    owner: "system",
+    name: "Owoce",
+    icons: ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"],
+    isDefault: true,
+  },
+];
+
 if (fs.existsSync(DB_FILE)) {
   const data = JSON.parse(fs.readFileSync(DB_FILE));
   users = data.users || [];
@@ -17,4 +27,4 @@ const saveToFile = () => {
   fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2));
 };
 
-module.exports = { users, comments, history, rooms, saveToFile };
+module.exports = { users, comments, history, decks, rooms, saveToFile };

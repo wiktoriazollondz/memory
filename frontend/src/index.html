@@ -18,9 +18,23 @@
 
     <div id="menu-section" style="display: none">
       <div class="user-header">
-        Zalogowany jako: <strong id="logged-user-display"></strong>
-        <button onclick="logout()" class="small-btn">Wyloguj się</button>
-        <button id="delete" class="small-btn" onclick="deleteAccount()">Usuń konto</button>  
+        <div class="header-left">
+          <div id="deck-selection">
+            <span>Wybierz talię:</span>
+            <select id="active-deck-select"></select>
+            <button onclick="openDeck()" class="small-btn">
+              Zarządzaj taliami
+            </button>
+          </div>
+        </div>
+
+        <div class="header-right">
+          Zalogowany jako: <strong id="logged-user-display"></strong>
+          <button onclick="logout()" class="small-btn">Wyloguj się</button>
+          <button id="delete" class="small-btn" onclick="deleteAccount()">
+            Usuń konto
+          </button>
+        </div>
       </div>
 
       <div class="menu-container">
@@ -43,29 +57,10 @@
           >
             Powrót do menu
           </button>
-          <button onclick="openHistory()" class="history-btn">Historia gier</button>
-          <button onclick="logout()">Wyloguj się</button> 
-
-          <div id="history-modal" class="modal-overlay">
-            <div class="modal-content">
-              <span class="close-modal" onclick="closeHistory()">&times;</span>
-              <h3>Twoja historia gier</h3>
-              <div class="history-table-container">
-                <table class="history-table">
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Wynik</th>
-                      <th>Notatka</th>
-                      <th>Akcje</th>
-                    </tr>
-                  </thead>
-                  <tbody id="history-list">
-                    </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <button onclick="openHistory()" class="history-btn">
+            Historia gier
+          </button>
+        </div>
 
         <div class="player-info-box">
           <span id="game-user-display"></span><br />
@@ -101,6 +96,48 @@
             onkeyup="searchPlayers()"
           />
           <ul id="leaderboard-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="history-modal" class="modal-overlay">
+      <div class="modal-content">
+        <span class="close-modal" onclick="closeHistory()">&times;</span>
+        <h3>Twoja historia gier</h3>
+        <div class="history-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Wynik</th>
+                <th>Notatka</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody id="history-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="deck-modal" class="modal-overlay">
+      <div class="modal-content">
+        <span class="close-modal" onclick="closeDeck()">&times;</span>
+        <h3>Zarządzaj taliami</h3>
+
+        <button onclick="createNewDeck()" class="add-btn">Nowa talia</button>
+
+        <div class="deck-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Nazwa</th>
+                <th>Podgląd</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody id="deck-manager-list"></tbody>
+          </table>
         </div>
       </div>
     </div>

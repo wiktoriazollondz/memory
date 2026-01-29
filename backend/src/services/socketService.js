@@ -41,8 +41,11 @@ const resetRoom = (roomName) => {
 const socketHandler = (io) => {
   io.on("connection", (socket) => {
     socket.on("join-room", (data) => {
-      const { roomName, mode } = data;
+      const { roomName, mode, icons } = data;
       socket.join(roomName);
+
+      let deckToUse =
+        icons && icons.length === 8 ? [...icons, ...icons] : cards;
 
       if (!rooms[roomName]) {
         rooms[roomName] = {
@@ -52,7 +55,7 @@ const socketHandler = (io) => {
           currentPlayerIndex: 0,
           gameStarted: false,
           mode: mode,
-          board: shuffle(cards),
+          board: shuffle(deckToUse),
         };
       }
 

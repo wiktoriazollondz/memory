@@ -6,9 +6,10 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const socketHandler = require("./src/services/socketService");
-const authCtrl = require("./src/controllers/authController");
+const userCtrl = require("./src/controllers/userController");
 const commentCtrl = require("./src/controllers/commentController");
 const historyCtrl = require("./src/controllers/historyController");
+const deckCtrl = require("./src/controllers/deckController");
 const authenticateToken = require("./src/middleware/authMiddleware");
 
 const app = express();
@@ -25,15 +26,15 @@ const io = new Server(server, {
 
 socketHandler(io);
 
-authCtrl.initMQTT(io);
+userCtrl.initMQTT(io);
 
-app.post("/login", authCtrl.login);
-app.post("/logout", authCtrl.logout);
+app.post("/login", userCtrl.login);
+app.post("/logout", userCtrl.logout);
 
-app.post("/register", authCtrl.register);
-app.get("/users", authCtrl.getLeaderboard);
-app.patch("/users/:username/score", authenticateToken, authCtrl.updateScore);
-app.delete("/users/:username", authenticateToken, authCtrl.deleteAccount);
+app.post("/register", userCtrl.register);
+app.get("/users", userCtrl.getLeaderboard);
+app.patch("/users/:username/score", authenticateToken, userCtrl.updateScore);
+app.delete("/users/:username", authenticateToken, userCtrl.deleteAccount);
 
 app.get("/comments", commentCtrl.getComments);
 app.post("/comments", authenticateToken, commentCtrl.postComment);
@@ -45,6 +46,11 @@ app.get("/history", authenticateToken, historyCtrl.getHistory);
 app.post("/history", authenticateToken, historyCtrl.postHistory);
 app.patch("/history/:id", authenticateToken, historyCtrl.updateHistoryNote);
 app.delete("/history/:id", authenticateToken, historyCtrl.deleteHistory);
+
+app.get("/decks", authenticateToken, deckCtrl.getDecks);
+app.post("/decks", authenticateToken, deckCtrl.createDeck);
+app.patch("/decks/:id", authenticateToken, deckCtrl.updateDeck);
+app.delete("/decks/:id", authenticateToken, deckCtrl.deleteDeck);
 
 server.listen(3000, "0.0.0.0", () => {
   console.log("Serwer działa na porcie 3000");

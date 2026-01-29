@@ -37,21 +37,17 @@ body {
   font-weight: bold;
 }
 
-.user-header {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 1rem;
-  padding: 10px;
-  border-radius: 8px;
-  color: rgba(123, 42, 199, 0.959);
-}
-
 .user-header button {
   border-radius: 10px;
   background-color: rgba(111, 53, 165, 0.726);
   color: white;
   border: none;
+}
+
+.header-left {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
 }
 
 .menu-container {
@@ -294,4 +290,31 @@ body {
 
 .history-table button {
   background-color: white;
+}
+
+.add-btn {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.add-btn:hover {
+  background-color: #27ae60;
+}
+
+.deck-table-container {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.header-right {
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
 }

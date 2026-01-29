@@ -86,27 +86,25 @@ async function deleteAccount() {
 }
 
 async function startSinglePlayer() {
-  stopTimer();
-  isTimerRunning = false;
-  isGameStarted = false;
-  document.getElementById("timer").innerText = "0";
+  console.log("Startuję Singleplayer...");
 
+  const selectedIcons = await getSelectedDeckIcons();
+  const roomName = `single_${sessionStorage.getItem("username")}_${Date.now()}`;
+  currentRoom = roomName;
   gameMode = "single";
-  currentRoom = "single_" + Math.random().toString(36).substring(7);
 
-  document.getElementById("game-user-display").innerText =
-    "Gracz: " + sessionStorage.getItem("username");
   document.getElementById("menu-section").style.display = "none";
   document.getElementById("game-section").style.display = "block";
-  document.getElementById("back-button").style.display = "inline-block";
+  document.getElementById("timer-container").style.display = "inline";
 
-  startSocket(currentRoom, gameMode);
-  createBoard([]);
+  startSocket(currentRoom, "single", selectedIcons);
 }
 
 async function startMultiPlayer() {
   const room = prompt("Podaj nazwę pokoju:", "game1");
   if (!room) return;
+
+  const selectedIcons = await getSelectedDeckIcons();
 
   gameMode = "multi";
   currentRoom = room;
@@ -127,13 +125,17 @@ async function startMultiPlayer() {
   document.getElementById("game-user-display").innerText =
     "Gracz: " + sessionStorage.getItem("username");
 
-  startSocket(currentRoom, gameMode);
+  startSocket(currentRoom, gameMode, selectedIcons);
 }
 
-function startSocket(roomName, mode) {
+function startSocket(roomName, mode, icons = null) {
   currentRoom = roomName;
+  if (socket) socket.disconnect();
   socket = io();
-  socket.on("connect", () => socket.emit("join-room", { roomName, mode }));
+  socket.on("connect", () => {
+    console.log("Połączono z socketem!");
+    socket.emit("join-room", { roomName, mode, icons });
+  });
 
   socket.on("start-game", (data) => {
     isGameStarted = true;
@@ -497,10 +499,124 @@ async function deleteHistoryEntry(id) {
   }
 }
 
+function openDeck() {
+  document.getElementById("deck-modal").style.display = "flex";
+  loadDecks();
+}
+
+function closeDeck() {
+  document.getElementById("deck-modal").style.display = "none";
+}
+
+async function loadDecks() {
+  const response = await fetch(`${API_URL}/decks`, { credentials: "include" });
+  const decks = await response.json();
+  const list = document.getElementById("deck-manager-list");
+  list.innerHTML = "";
+
+  decks.forEach((deck) => {
+    const isDefault = deck.id === "default";
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${deck.name}</td>
+      <td><small>${deck.icons.join(" ")}</small></td>
+      <td>
+        ${
+          isDefault
+            ? "<em>Domyślna</em>"
+            : `
+          <button onclick="editDeck('${deck.id}')">✏️</button>
+          <button onclick="deleteDeck('${deck.id}')" style="color:red">🗑️</button>
+        `
+        }
+      </td>
+    `;
+    list.appendChild(row);
+  });
+
+  updateDeckSelect(decks);
+}
+
+async function getSelectedDeckIcons() {
+  try {
+    const select = document.getElementById("active-deck-select");
+    if (!select || !select.value) {
+      return ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"];
+    }
+
+    const response = await fetch(`${API_URL}/decks`, {
+      credentials: "include",
+    });
+    const decks = await response.json();
+    const deck = decks.find((d) => d.id === select.value);
+
+    return deck ? deck.icons : ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"];
+  } catch (err) {
+    console.error("Błąd pobierania talii, używam domyślnej:", err);
+    return ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"];
+  }
+}
+
+async function createNewDeck() {
+  const name = prompt("Podaj nazwę nowej talii:");
+  if (!name) return;
+  const iconsInput = prompt("Wpisz dokładnie 8 emoji (bez spacji):");
+  if (!iconsInput) return;
+
+  const icons = Array.from(iconsInput);
+  if (icons.length !== 8)
+    return alert("Błąd: Talia musi mieć dokładnie 8 emoji!");
+
+  await fetch(`${API_URL}/decks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name, icons }),
+  });
+  loadDecks();
+}
+
+async function editDeck(id) {
+  const newName = prompt("Podaj nową nazwę dla talii:");
+  if (!newName) return;
+
+  await fetch(`${API_URL}/decks/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name: newName }),
+  });
+  loadDecks();
+}
+
+async function deleteDeck(id) {
+  if (!confirm("Czy na pewno chcesz usunąć tę talię?")) return;
+
+  await fetch(`${API_URL}/decks/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  loadDecks();
+}
+
+function updateDeckSelect(decks) {
+  const select = document.getElementById("active-deck-select");
+  const current = select.value;
+  select.innerHTML = decks
+    .map((d) => `<option value="${d.id}">${d.name}</option>`)
+    .join("");
+  if (current) select.value = current;
+}
+
 window.onclick = function (event) {
-  const modal = document.getElementById("history-modal");
-  if (event.target === modal) {
+  const historyModal = document.getElementById("history-modal");
+  const deckModal = document.getElementById("deck-modal");
+
+  if (event.target === historyModal) {
     closeHistory();
+  }
+  if (event.target === deckModal) {
+    closeDeck();
   }
 };
 
@@ -516,5 +632,6 @@ window.addEventListener("load", () => {
     document.getElementById("menu-section").style.display = "block";
     document.getElementById("logged-user-display").innerText = savedUser;
     loadLeaderboard();
+    loadDecks();
   }
 });
