@@ -20,10 +20,12 @@ if (fs.existsSync(DB_FILE)) {
   const data = JSON.parse(fs.readFileSync(DB_FILE));
   users = data.users || [];
   comments = data.comments || [];
+  history = data.history || [];
+  decks = data.decks || decks;
 }
 
 const saveToFile = () => {
-  const dataToSave = { users, comments };
+  const dataToSave = { users, comments, history, decks };
   fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2));
 };
 

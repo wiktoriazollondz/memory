@@ -55,12 +55,17 @@ const socketHandler = (io) => {
           currentPlayerIndex: 0,
           gameStarted: false,
           mode: mode,
+          scores: {},
           board: shuffle(deckToUse),
         };
       }
 
       if (!rooms[roomName].players.includes(socket.id)) {
         rooms[roomName].players.push(socket.id);
+      }
+
+      if (!rooms[roomName].scores[socket.id]) {
+        rooms[roomName].scores[socket.id] = 0;
       }
 
       if (mode === "single") {
@@ -114,6 +119,8 @@ const socketHandler = (io) => {
 
         if (isMatch) {
           room.matchedPairs.push(card1.index, card2.index);
+          room.scores[socket.id]++;
+          io.to(data.room).emit("score-update", room.scores);
           io.to(data.room).emit("match-result", {
             match: true,
             indices: [card1.index, card2.index],
@@ -121,7 +128,7 @@ const socketHandler = (io) => {
 
           if (room.matchedPairs.length === TOTAL_PAIRS * 2) {
             io.to(data.room).emit("game-over", {
-              winnerId: socket.id,
+              scores: room.scores,
               mode: room.mode,
             });
             resetRoom(data.room);

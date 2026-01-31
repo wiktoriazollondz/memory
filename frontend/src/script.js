@@ -4,6 +4,7 @@ let timerInterval;
 let socket;
 let isGameStarted = false;
 let isTimerRunning = false;
+let lockBoard = false;
 let myTurn = false;
 let currentRoom = "";
 let gameMode = "single";
@@ -41,6 +42,8 @@ async function login() {
 
     loadLeaderboard();
     loadComments();
+    loadHistory();
+    loadDecks();
   } else {
     alert("Błąd logowania!");
   }
@@ -191,18 +194,42 @@ function startSocket(roomName, mode, icons = null) {
     const cards = document.querySelectorAll(".card");
     cards[data.index].innerText = data.symbol;
     cards[data.index].classList.add("flipped");
+
+    const flippedCards = document.querySelectorAll(
+      ".card.flipped:not(.matched)",
+    );
+    if (flippedCards.length === 2) {
+      lockBoard = true;
+    }
+  });
+
+  socket.on("score-update", (scores) => {
+    const scoreDisplay = document.getElementById("score-display");
+    const scoreDiv = document.getElementById("multiplayer-score");
+
+    if (gameMode === "multi") {
+      scoreDiv.style.display = "block";
+      const myScore = scores[socket.id] || 0;
+      const opponentId = Object.keys(scores).find((id) => id !== socket.id);
+      const opponentScore = scores[opponentId] || 0;
+
+      scoreDisplay.innerText = `Ty: ${myScore} | Przeciwnik: ${opponentScore}`;
+    }
   });
 
   socket.on("match-result", (result) => {
     const cards = document.querySelectorAll(".card");
+
     if (result.match) {
       result.indices.forEach((idx) => cards[idx].classList.add("matched"));
+      lockBoard = false;
     } else {
       setTimeout(() => {
         result.indices.forEach((idx) => {
           cards[idx].innerText = "?";
           cards[idx].classList.remove("flipped");
         });
+        lockBoard = false;
       }, 1000);
     }
   });
@@ -224,36 +251,54 @@ function startSocket(roomName, mode, icons = null) {
     const time = stopTimer();
     isGameStarted = false;
     isTimerRunning = false;
-    alert(
-      data.winnerId === socket.id || mode === "single"
-        ? "WYGRANA!"
-        : "PRZEGRANA!",
-    );
+
+    if (mode === "multi") {
+      const myScore = data.scores[socket.id] || 0;
+      const opponentId = Object.keys(data.scores).find(
+        (id) => id !== socket.id,
+      );
+      const opponentScore = data.scores[opponentId] || 0;
+
+      if (myScore > opponentScore) {
+        alert(`WYGRANA! Wynik: ${myScore}:${opponentScore}`);
+      } else if (myScore < opponentScore) {
+        alert(`PRZEGRANA! Wynik: ${myScore}:${opponentScore}`);
+      } else {
+        alert(`REMIS! Wynik: ${myScore}:${opponentScore}`);
+      }
+    } else {
+      alert("WYGRANA!");
+    }
 
     if (mode === "single") {
-      await fetch(
-        `${API_URL}/users/${sessionStorage.getItem("username")}/score`,
-        {
-          method: "PATCH",
+      try {
+        await fetch(
+          `${API_URL}/users/${sessionStorage.getItem("username")}/score`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ newTime: parseInt(time) }),
+          },
+        );
+
+        await fetch(`${API_URL}/history`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ newTime: parseInt(time) }),
-        },
-      );
+          body: JSON.stringify({
+            score: parseInt(time),
+            mode: "single",
+          }),
+        });
 
-      await fetch(`${API_URL}/history`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          score: parseInt(time),
-          mode: "single",
-        }),
-      });
-
-      loadLeaderboard();
+        loadLeaderboard();
+      } catch (err) {
+        console.error("Błąd zapisu wyników:", err);
+      }
     }
-    document.getElementById("back-button").style.display = "block";
+    const backBtn = document.getElementById("back-button");
+    if (backBtn) backBtn.style.display = "block";
   });
 }
 
@@ -265,7 +310,12 @@ function createBoard(boardLayout) {
     card.className = "card";
     card.innerText = "?";
     card.onclick = () => {
-      if (!isGameStarted || !myTurn || card.classList.contains("flipped"))
+      if (
+        lockBoard ||
+        !isGameStarted ||
+        !myTurn ||
+        card.classList.contains("flipped")
+      )
         return;
       if (gameMode === "single" && !isTimerRunning) {
         startTimer();
