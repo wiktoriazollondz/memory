@@ -1,5 +1,8 @@
 import { API_URL } from "./config.js";
+import { showToast } from "./notifications.js";
+import { closeConfirm } from "./decks.js";
 
+let currentHistoryId = null;
 export function openHistory() {
   document.getElementById("history-modal").style.display = "flex";
   loadHistory();
@@ -13,11 +16,7 @@ export async function loadHistory() {
   const response = await fetch(`${API_URL}/history`, {
     credentials: "include",
   });
-  if (!response.ok) {
-    const errorMsg = await response.text();
-    console.warn("Serwer odrzucił żądanie:", errorMsg);
-    return;
-  }
+  if (!response.ok) return;
 
   const entries = await response.json();
   const list = document.getElementById("history-list");
@@ -30,44 +29,64 @@ export async function loadHistory() {
       <td><strong>${h.score}s</strong></td>
       <td><small>${h.note || "---"}</small></td>
       <td>
-        <button onclick="editHistoryNote('${h.id}')">📝</button>
-        <button onclick="deleteHistoryEntry('${h.id}')">🗑️</button>
+        <button onclick="openHistoryNoteModal('${h.id}', '${h.note || ""}')">📝</button>
+        <button onclick="askDeleteHistory('${h.id}')">🗑️</button>
       </td>
     `;
     list.appendChild(row);
   });
 }
 
-export async function editHistoryNote(id) {
-  const newNote = prompt("Dodaj notatkę do tej gry:");
-  if (newNote === null) return;
+export function openHistoryNoteModal(id, oldNote) {
+  currentHistoryId = id;
+  document.getElementById("history-note-input").value = oldNote;
+  document.getElementById("history-note-modal").style.display = "flex";
+}
 
-  const response = await fetch(`${API_URL}/history/${id}`, {
+export function closeHistoryNoteModal() {
+  document.getElementById("history-note-modal").style.display = "none";
+  currentHistoryId = null;
+}
+
+export async function saveHistoryNote() {
+  const note = document.getElementById("history-note-input").value.trim();
+
+  const response = await fetch(`${API_URL}/history/${currentHistoryId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ note: newNote }),
+    body: JSON.stringify({ note }),
   });
 
   if (response.ok) {
+    showToast("Notatka zapisana", "success");
+    closeHistoryNoteModal();
     loadHistory();
   }
 }
 
-export async function deleteHistoryEntry(id) {
-  if (!confirm("Czy na pewno chcesz usunąć ten wynik z historii?")) return;
+export function askDeleteHistory(id) {
+  currentHistoryId = id;
+  const modal = document.getElementById("confirm-modal");
+  modal.style.display = "flex";
+  document.getElementById("confirm-yes-btn").onclick = confirmDeleteHistory;
+}
 
-  const response = await fetch(`${API_URL}/history/${id}`, {
+async function confirmDeleteHistory() {
+  const response = await fetch(`${API_URL}/history/${currentHistoryId}`, {
     method: "DELETE",
     credentials: "include",
   });
-
   if (response.ok) {
+    showToast("Wpis usunięty", "info");
+    closeConfirm();
     loadHistory();
   }
 }
 
 window.openHistory = openHistory;
 window.closeHistory = closeHistory;
-window.editHistoryNote = editHistoryNote;
-window.deleteHistoryEntry = deleteHistoryEntry;
+window.openHistoryNoteModal = openHistoryNoteModal;
+window.closeHistoryNoteModal = closeHistoryNoteModal;
+window.saveHistoryNote = saveHistoryNote;
+window.askDeleteHistory = askDeleteHistory;

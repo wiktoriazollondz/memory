@@ -16,6 +16,7 @@ import {
 import { createBoard, stopTimer } from "./game.js";
 import { loadLeaderboard } from "./leaderboard.js";
 import { loadComments } from "./chat.js";
+import { showToast } from "./notifications.js";
 
 export function startSocket(roomName, mode, icons = null) {
   if (socket) {
@@ -168,7 +169,7 @@ export function startSocket(roomName, mode, icons = null) {
         turnInfo.style.color = "orange";
       }
     } else {
-      alert("WYGRANA! Twój czas to: " + time + "s");
+      showToast("WYGRANA! Twój czas to: " + time + "s", "success");
     }
 
     if (mode === "single") {

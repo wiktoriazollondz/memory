@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mqtt = require("mqtt");
-const { users, saveToFile } = require("../database");
+const { users, comments, history, decks, saveToFile } = require("../database");
 
 const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
 const topic = "game/global/scores"; // temat
@@ -101,21 +101,30 @@ exports.updateScore = async (req, res) => {
 
 exports.deleteAccount = (req, res) => {
   const username = req.params.username;
-  if (req.user.username !== username)
+  if (req.user.username !== username) {
     return res.status(403).send("Brak uprawnień");
+  }
 
   const index = users.findIndex((u) => u.username === username);
   if (index !== -1) {
     users.splice(index, 1);
 
-    const { comments } = require("../database");
-    for (let i = comments.length - 1; i >= 0; i--) {
-      if (comments[i].username === username) {
-        comments.splice(i, 1);
-      }
-    }
+    const filteredComments = comments.filter((c) => c.username !== username);
+    comments.length = 0;
+    comments.push(...filteredComments);
+
+    const filteredHistory = history.filter((h) => h.username !== username);
+    history.length = 0;
+    history.push(...filteredHistory);
+
+    const filteredDecks = decks.filter((d) => d.owner !== username);
+    decks.length = 0;
+    decks.push(...filteredDecks);
+
     saveToFile();
-    res.json({ message: "Konto oraz powiązane dane zostały usunięte" });
+    res.json({
+      message: "Konto oraz powiązane dane zostały usunięte",
+    });
   } else {
     res.status(404).send("Nie znaleziono użytkownika");
   }

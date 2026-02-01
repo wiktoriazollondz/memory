@@ -3,10 +3,15 @@ import { loadLeaderboard } from "./leaderboard.js";
 import { loadComments } from "./chat.js";
 import { loadHistory } from "./history.js";
 import { loadDecks } from "./decks.js";
+import { showToast } from "./notifications.js";
 
 export async function login() {
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
+
+  if (!user || !pass) {
+    return showToast("Login i hasło nie mogą być puste!", "error");
+  }
 
   const response = await fetch(`${API_URL}/login`, {
     method: "POST",
@@ -16,6 +21,7 @@ export async function login() {
   });
 
   if (response.ok) {
+    showToast("Miłej gry " + user + "!", "success");
     sessionStorage.setItem("username", user);
     document.getElementById("logged-user-display").innerText = user;
 
@@ -28,19 +34,37 @@ export async function login() {
     loadHistory();
     loadDecks();
   } else {
-    alert("Błąd logowania!");
+    showToast("Błąd logowania!", "error");
   }
 }
 
 export async function register() {
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  const response = await fetch(`${API_URL}/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: user, password: pass }),
-  });
-  alert(await response.text());
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+
+  if (!user || !pass) {
+    return showToast("Uzupełnij login i hasło!", "error");
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: user, password: pass }),
+    });
+
+    const message = await response.text();
+
+    if (response.ok) {
+      showToast(message || "Konto utworzone! Możesz się zalogować", "success");
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+    } else {
+      showToast(message || "Błąd rejestracji", "error");
+    }
+  } catch (err) {
+    showToast("Brak połączenia z serwerem", "error");
+  }
 }
 
 export async function logout() {
@@ -55,34 +79,44 @@ export async function logout() {
   location.reload();
 }
 
+export function askDeleteAccount() {
+  const username = sessionStorage.getItem("username");
+  if (!username) return showToast("Nie jesteś zalogowany!", "error");
+  document.getElementById("confirm-modal").style.display = "flex";
+  document.getElementById("confirm-yes-btn").onclick = deleteAccount;
+}
+
 export async function deleteAccount() {
   const username = sessionStorage.getItem("username");
-  if (!username) return;
-
-  const confirmed = confirm("Czy na pewno chcesz usunąć konto?");
-  if (!confirmed) return;
+  const btn = document.getElementById("confirm-yes-btn");
+  if (btn) btn.disabled = true;
 
   try {
     const response = await fetch(`${API_URL}/users/${username}`, {
       method: "DELETE",
       credentials: "include",
     });
-
-    if (response.ok) {
-      alert("Twoje konto zostało usunięte!");
+    if (response.ok || response.status === 404) {
+      showToast("Konto usunięte", "info");
       sessionStorage.clear();
-      location.reload();
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
     } else {
       const errorText = await response.text();
-      alert("Błąd podczas usuwania konta: " + errorText);
+      showToast("Błąd: " + errorText, "error");
+      if (btn) btn.disabled = false;
     }
   } catch (err) {
-    console.error("Błąd sieci:", err);
-    alert("Nie udało się połączyć z serwerem.");
+    showToast("Błąd sieci: Nie udało się połączyć z serwerem", "error");
+    if (btn) btn.disabled = false;
+  } finally {
+    closeConfirm();
   }
 }
 
 window.login = login;
 window.register = register;
 window.logout = logout;
+window.askDeleteAccount = askDeleteAccount;
 window.deleteAccount = deleteAccount;

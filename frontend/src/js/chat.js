@@ -1,4 +1,5 @@
 import { socket, currentRoom, API_URL } from "./config.js";
+import { showToast } from "./notifications.js";
 
 export async function loadComments() {
   try {
@@ -50,7 +51,7 @@ export async function addComment(e) {
       socket.emit("chat-update", { room: currentRoom });
     }
   } else {
-    alert("Błąd wysyłania: " + (await response.text()));
+    showToast("Błąd wysyłania!", "error");
   }
 }
 

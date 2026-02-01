@@ -9,22 +9,28 @@ import {
   setGameMode,
   setIsGameStarted,
   setIsTimerRunning,
+  isTimerRunning,
+  startTime,
+  timerInterval,
+  myTurn,
+  setMyTurn,
+  setLockBoard,
+  setStartTime,
+  setTimerInterval,
 } from "./config.js";
 import { getSelectedDeckIcons } from "./decks.js";
 import { startSocket } from "./socket.js";
 
-let myTurn = true;
-let timerInterval = null;
-let startTime = null;
-let isTimerRunning = false;
-
 export async function startSinglePlayer() {
   console.log("Startuję Singleplayer...");
-
+  setLockBoard(false);
   const selectedIcons = await getSelectedDeckIcons();
   const roomName = `single_${sessionStorage.getItem("username")}_${Date.now()}`;
   setCurrentRoom(roomName);
   setGameMode("single");
+  setIsGameStarted(true);
+  setMyTurn(true);
+  setIsTimerRunning(false);
 
   document.getElementById("game-user-display").innerText =
     "Gracz: " + sessionStorage.getItem("username");
@@ -79,7 +85,7 @@ export function createBoard(boardLayout) {
         return;
       if (gameMode === "single" && !isTimerRunning) {
         startTimer();
-        isTimerRunning = true;
+        setIsTimerRunning(true);
       }
       socket.emit("flip-card", { index: index, room: currentRoom });
     };
@@ -89,17 +95,20 @@ export function createBoard(boardLayout) {
 
 export function startTimer() {
   if (timerInterval) clearInterval(timerInterval);
-  startTime = Date.now();
-  timerInterval = setInterval(() => {
+  setStartTime(Date.now());
+
+  const interval = setInterval(() => {
     const seconds = Math.floor((Date.now() - startTime) / 1000);
-    document.getElementById("timer").innerText = seconds;
+    const timerElem = document.getElementById("timer");
+    if (timerElem) timerElem.innerText = seconds;
   }, 1000);
+  setTimerInterval(interval);
 }
 
 export function stopTimer() {
   if (timerInterval) {
     clearInterval(timerInterval);
-    timerInterval = null;
+    setTimerInterval(null);
   }
   return document.getElementById("timer").innerText;
 }

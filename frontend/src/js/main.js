@@ -1,5 +1,11 @@
 import { startSocket } from "./socket.js";
-import { login, register, logout, deleteAccount } from "./user.js";
+import {
+  login,
+  register,
+  logout,
+  deleteAccount,
+  askDeleteAccount,
+} from "./user.js";
 import {
   startSinglePlayer,
   startMultiPlayer,
@@ -22,19 +28,23 @@ import {
 import {
   openHistory,
   closeHistory,
-  loadHistory,
-  editHistoryNote,
-  deleteHistoryEntry,
+  askDeleteHistory,
+  closeHistoryNoteModal,
+  openHistoryNoteModal,
+  saveHistoryNote,
 } from "./history.js";
 import {
   openDeck,
   closeDeck,
+  openDeckForm,
+  closeDeckForm,
   loadDecks,
-  getSelectedDeckIcons,
-  createNewDeck,
-  editDeck,
-  deleteDeck,
+  handleDeckSubmit,
+  askDeleteDeck,
+  closeConfirm,
+  confirmDelete,
   updateDeckSelect,
+  getSelectedDeckIcons,
 } from "./decks.js";
 
 window.startSocket = startSocket;
@@ -43,6 +53,7 @@ window.login = login;
 window.register = register;
 window.logout = logout;
 window.deleteAccount = deleteAccount;
+window.askDeleteAccount = askDeleteAccount;
 
 window.startSinglePlayer = startSinglePlayer;
 window.startMultiPlayer = startMultiPlayer;
@@ -62,18 +73,22 @@ window.deleteComment = deleteComment;
 
 window.openHistory = openHistory;
 window.closeHistory = closeHistory;
-window.loadHistory = loadHistory;
-window.editHistoryNote = editHistoryNote;
-window.deleteHistoryEntry = deleteHistoryEntry;
+window.openHistoryNoteModal = openHistoryNoteModal;
+window.closeHistoryNoteModal = closeHistoryNoteModal;
+window.saveHistoryNote = saveHistoryNote;
+window.askDeleteHistory = askDeleteHistory;
 
 window.openDeck = openDeck;
 window.closeDeck = closeDeck;
+window.openDeckForm = openDeckForm;
+window.closeDeckForm = closeDeckForm;
 window.loadDecks = loadDecks;
-window.getSelectedDeckIcons = getSelectedDeckIcons;
-window.createNewDeck = createNewDeck;
-window.editDeck = editDeck;
-window.deleteDeck = deleteDeck;
+window.handleDeckSubmit = handleDeckSubmit;
+window.askDeleteDeck = askDeleteDeck;
+window.closeConfirm = closeConfirm;
+window.confirmDelete = confirmDelete;
 window.updateDeckSelect = updateDeckSelect;
+window.getSelectedDeckIcons = getSelectedDeckIcons;
 
 window.onclick = function (event) {
   const historyModal = document.getElementById("history-modal");

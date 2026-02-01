@@ -7,8 +7,8 @@ export let isTimerRunning = false;
 export let lockBoard = false;
 export let myTurn = false;
 export let currentBoard = [];
-export let startTime;
-export let timerInterval;
+export let startTime = null;
+export let timerInterval = null;
 
 export const setSocket = (s) => (socket = s);
 export const setCurrentRoom = (r) => (currentRoom = r);
@@ -18,3 +18,5 @@ export const setIsTimerRunning = (v) => (isTimerRunning = v);
 export const setLockBoard = (v) => (lockBoard = v);
 export const setMyTurn = (v) => (myTurn = v);
 export const setCurrentBoard = (v) => (currentBoard = v);
+export const setStartTime = (v) => (startTime = v);
+export const setTimerInterval = (v) => (timerInterval = v);

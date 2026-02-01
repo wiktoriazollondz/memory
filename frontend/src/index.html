@@ -41,7 +41,7 @@
         <div class="header-right">
           Zalogowany jako: <strong id="logged-user-display"></strong>
           <button onclick="logout()" class="small-btn">Wyloguj się</button>
-          <button id="delete" class="small-btn" onclick="deleteAccount()">
+          <button id="delete" class="small-btn" onclick="askDeleteAccount()">
             Usuń konto
           </button>
         </div>
@@ -131,13 +131,24 @@
       </div>
     </div>
 
+    <div id="history-note-modal" class="modal-overlay" style="display: none">
+      <div class="modal-content">
+        <h3>Dodaj notatkę</h3>
+        <textarea id="history-note-input" rows="3"></textarea>
+        <div class="modal-buttons">
+          <button onclick="saveHistoryNote()">Zapisz</button>
+          <button onclick="closeHistoryNoteModal()" class="btn-secondary">
+            Anuluj
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="deck-modal" class="modal-overlay">
       <div class="modal-content">
         <span class="close-modal" onclick="closeDeck()">&times;</span>
         <h3>Zarządzaj taliami</h3>
-
-        <button onclick="createNewDeck()" class="add-btn">Nowa talia</button>
-
+        <button class="add-btn" onclick="openDeckForm()">Nowa talia</button>
         <div class="deck-table-container">
           <table class="history-table">
             <thead>
@@ -149,6 +160,32 @@
             </thead>
             <tbody id="deck-manager-list"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="deck-form-modal" class="modal-overlay" style="display: none">
+      <div class="modal-content">
+        <h3 id="deck-form-title">Nowa Talia</h3>
+        <input type="text" id="deck-name-input" placeholder="Nazwa talii" />
+        <input type="text" id="deck-icons-input" placeholder="Wklej 8 emoji" />
+        <div class="modal-buttons">
+          <button id="deck-form-submit" onclick="handleDeckSubmit()">
+            Zapisz
+          </button>
+          <button onclick="closeDeckForm()" class="btn-secondary">
+            Anuluj
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-overlay" style="display: none">
+      <div class="modal-content mini">
+        <h3>Czy na pewno chcesz usunąć?</h3>
+        <div class="modal-buttons">
+          <button id="confirm-yes-btn" class="btn-danger">Usuń</button>
+          <button onclick="closeConfirm()" class="btn-secondary">Anuluj</button>
         </div>
       </div>
     </div>
