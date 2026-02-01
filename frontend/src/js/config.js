@@ -1,0 +1,20 @@
+export const API_URL = "/api";
+export let socket = null;
+export let currentRoom = "";
+export let gameMode = "single";
+export let isGameStarted = false;
+export let isTimerRunning = false;
+export let lockBoard = false;
+export let myTurn = false;
+export let currentBoard = [];
+export let startTime;
+export let timerInterval;
+
+export const setSocket = (s) => (socket = s);
+export const setCurrentRoom = (r) => (currentRoom = r);
+export const setGameMode = (m) => (gameMode = m);
+export const setIsGameStarted = (v) => (isGameStarted = v);
+export const setIsTimerRunning = (v) => (isTimerRunning = v);
+export const setLockBoard = (v) => (lockBoard = v);
+export const setMyTurn = (v) => (myTurn = v);
+export const setCurrentBoard = (v) => (currentBoard = v);

@@ -62,6 +62,7 @@ const socketHandler = (io) => {
 
       if (!rooms[roomName].players.includes(socket.id)) {
         rooms[roomName].players.push(socket.id);
+        rooms[roomName].scores[socket.id] = 0;
       }
 
       if (!rooms[roomName].scores[socket.id]) {
@@ -75,9 +76,14 @@ const socketHandler = (io) => {
         rooms[roomName].players.length === 2 &&
         !rooms[roomName].gameStarted
       ) {
+        rooms[roomName].players.forEach((id) => {
+          rooms[roomName].scores[id] = 0;
+        });
+
         rooms[roomName].gameStarted = true;
         rooms[roomName].currentPlayerIndex = 0;
 
+        io.to(roomName).emit("score-update", rooms[roomName].scores);
         io.to(roomName).emit("start-game", { board: rooms[roomName].board });
 
         setTimeout(() => {
@@ -119,7 +125,7 @@ const socketHandler = (io) => {
 
         if (isMatch) {
           room.matchedPairs.push(card1.index, card2.index);
-          room.scores[socket.id]++;
+          room.scores[socket.id] = (room.scores[socket.id] || 0) + 1;
           io.to(data.room).emit("score-update", room.scores);
           io.to(data.room).emit("match-result", {
             match: true,

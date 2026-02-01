@@ -318,3 +318,8 @@ body {
   right: 1rem;
   top: 1rem;
 }
+
+#multiplayer-score {
+  display: inline;
+  margin-left: 1rem;
+}

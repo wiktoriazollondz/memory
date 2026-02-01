@@ -9,8 +9,18 @@
     <div id="auth-section">
       <h2>Memory Game</h2>
       <form class="loginForm" onsubmit="event.preventDefault()">
-        <input type="text" id="username" placeholder="Login" />
-        <input type="password" id="password" placeholder="Hasło" />
+        <input
+          type="text"
+          id="username"
+          placeholder="Login"
+          autocomplete="username"
+        />
+        <input
+          type="password"
+          id="password"
+          placeholder="Hasło"
+          autocomplete="current-password"
+        />
         <button type="button" onclick="login()">Zaloguj się</button>
         <button type="button" onclick="register()">Zarejestruj się</button>
       </form>
@@ -69,15 +79,13 @@
       </div>
 
       <div id="game-info">
-        <p>
-          <span id="timer-container" style="display: none"
-            >Czas: <span id="timer">0</span>s</span
-          >
-          <span id="turn-info" style="display: none">Oczekiwanie...</span>
+        <div class="info-wrapper">
+          <span id="timer-container">Czas: <span id="timer">0</span>s</span>
+          <span id="turn-info">Oczekiwanie...</span>
           <div id="multiplayer-score">
-            Punkty: <span id="score-display">Czekaj...</span>
+            <span id="score-display">0 : 0</span>
           </div>
-        </p>
+        </div>
       </div>
 
       <div class="page-layout">
@@ -146,6 +154,6 @@
     </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>
