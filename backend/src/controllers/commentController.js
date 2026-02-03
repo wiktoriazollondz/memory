@@ -18,7 +18,7 @@ exports.editComment = (req, res) => {
   const comment = comments.find((c) => c.id === req.params.id);
   if (!comment) return res.status(404).send("Nie znaleziono komentarza");
   if (comment.username !== req.user.username)
-    return res.status(403).send("To nie Twój komentarz!");
+    return res.status(403).send("To nie twój komentarz");
 
   comment.text = req.body.text;
   saveToFile();

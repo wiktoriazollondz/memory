@@ -23,9 +23,9 @@ exports.postHistory = (req, res) => {
 exports.updateHistoryNote = (req, res) => {
   const entry = history.find((h) => h.id === req.params.id);
 
-  if (!entry) return res.status(404).send("Nie znaleziono wpisu w historii");
+  if (!entry) return res.status(404).send("Nie znaleziono wpisu");
   if (entry.username !== req.user.username)
-    return res.status(403).send("To nie Twój wpis!");
+    return res.status(403).send("To nie twój wpis");
 
   entry.note = req.body.note;
   saveToFile();

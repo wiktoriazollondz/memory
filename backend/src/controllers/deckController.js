@@ -15,7 +15,7 @@ exports.createDeck = (req, res) => {
   const newDeck = {
     id: Date.now().toString(),
     owner: req.user.username,
-    name: name || "Moja Talia",
+    name: name || "Moja talia",
     icons: icons,
     isDefault: false,
   };
@@ -29,7 +29,7 @@ exports.updateDeck = (req, res) => {
   const deck = decks.find(
     (d) => d.id === req.params.id && d.owner === req.user.username,
   );
-  if (!deck) return res.status(404).send("Nie znaleziono Twojej talii");
+  if (!deck) return res.status(404).send("Nie znaleziono talii");
 
   deck.icons = req.body.icons || deck.icons;
   deck.name = req.body.name || deck.name;

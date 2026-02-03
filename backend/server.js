@@ -5,12 +5,12 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
-const socketHandler = require("./src/services/socketService");
+const socketHandler = require("./src/socketService");
 const userCtrl = require("./src/controllers/userController");
 const commentCtrl = require("./src/controllers/commentController");
 const historyCtrl = require("./src/controllers/historyController");
 const deckCtrl = require("./src/controllers/deckController");
-const authenticateToken = require("./src/middleware/authMiddleware");
+const authenticateToken = require("./src/token");
 
 const app = express();
 app.use(cors({ origin: "http://127.0.0.1:5500", credentials: true }));

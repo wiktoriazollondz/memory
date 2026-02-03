@@ -2,24 +2,27 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Memory Game</title>
+    <title>Memory</title>
+    <link rel="icon" href="/favicon.ico?v=banan" sizes="any" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="auth-section">
-      <h2>Memory Game</h2>
+      <h2>Memory</h2>
       <form class="loginForm" onsubmit="event.preventDefault()">
         <input
           type="text"
           id="username"
           placeholder="Login"
           autocomplete="username"
+          required
         />
         <input
           type="password"
           id="password"
           placeholder="Hasło"
           autocomplete="current-password"
+          required
         />
         <button type="button" onclick="login()">Zaloguj się</button>
         <button type="button" onclick="register()">Zarejestruj się</button>
@@ -73,8 +76,9 @@
         </div>
 
         <div class="player-info-box">
-          <span id="game-user-display"></span><br />
-          <strong id="room-display"></strong>
+          <strong id="game-user-display"></strong><br />
+          <strong id="room-display"></strong><br />
+          <span id="online-counter">Graczy online: ?</span>
         </div>
       </div>
 

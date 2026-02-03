@@ -152,6 +152,16 @@ export function startSocket(roomName, mode, icons = null) {
     backToMenu();
   });
 
+  newSocket.on("player-left", () => {
+    showToast("Przeciwnik opuścił pokój", "info");
+
+    const turnInfo = document.getElementById("turn-info");
+    if (turnInfo) {
+      turnInfo.innerText = "Przeciwnik wyszedł z gry";
+      turnInfo.style.color = "grey";
+    }
+  });
+
   newSocket.on("game-over", async (data) => {
     const time = stopTimer();
     setIsGameStarted(false);

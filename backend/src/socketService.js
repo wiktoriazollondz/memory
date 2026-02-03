@@ -1,4 +1,4 @@
-const { rooms } = require("../database");
+const { rooms } = require("./database");
 
 const TOTAL_PAIRS = 8;
 const cards = [
@@ -20,6 +20,7 @@ const cards = [
   "🍑",
 ];
 
+//algorytm Fishera-Yatesa
 function shuffle(array) {
   let shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -42,6 +43,18 @@ const socketHandler = (io) => {
   io.on("connection", (socket) => {
     socket.on("join-room", (data) => {
       const { roomName, mode, icons } = data;
+
+      //blokada max 2 osoby w pokoju
+      if (
+        rooms[roomName] &&
+        rooms[roomName].mode === "multi" &&
+        rooms[roomName].players.length >= 2 &&
+        !rooms[roomName].players.find((p) => p.id === socket.id) //ten sam gracz
+      ) {
+        socket.emit("error-msg", "Ten pokój jest już pełny");
+        return;
+      }
+
       socket.join(roomName);
 
       let deckToUse =
@@ -65,10 +78,6 @@ const socketHandler = (io) => {
         rooms[roomName].scores[socket.id] = 0;
       }
 
-      if (!rooms[roomName].scores[socket.id]) {
-        rooms[roomName].scores[socket.id] = 0;
-      }
-
       if (mode === "single") {
         rooms[roomName].gameStarted = true;
         socket.emit("start-game", { board: rooms[roomName].board });
@@ -79,7 +88,6 @@ const socketHandler = (io) => {
         rooms[roomName].players.forEach((id) => {
           rooms[roomName].scores[id] = 0;
         });
-
         rooms[roomName].gameStarted = true;
         rooms[roomName].currentPlayerIndex = 0;
 
@@ -96,22 +104,21 @@ const socketHandler = (io) => {
     socket.on("flip-card", (data) => {
       const room = rooms[data.room];
       if (!room || !room.gameStarted) return;
-
+      //blokada, jak nie jest twoja tura
       if (
         room.mode === "multi" &&
         room.players[room.currentPlayerIndex] !== socket.id
       )
         return;
       if (room.flippedCards.length >= 2) return;
-
-      const symbolFromServer = room.board[data.index];
-
+      //blokada kliknięcia w tę samą kartę
       if (
         room.flippedCards.length === 1 &&
         room.flippedCards[0].index === data.index
       )
         return;
 
+      const symbolFromServer = room.board[data.index];
       room.flippedCards.push({ index: data.index, symbol: symbolFromServer });
 
       io.to(data.room).emit("flip-card", {
@@ -140,11 +147,12 @@ const socketHandler = (io) => {
             resetRoom(data.room);
           }
         } else {
+          //brak dopasowania
           io.to(data.room).emit("match-result", {
             match: false,
             indices: [card1.index, card2.index],
           });
-
+          //zmiana tury
           if (room.mode === "multi") {
             room.currentPlayerIndex =
               (room.currentPlayerIndex + 1) % room.players.length;
@@ -182,6 +190,7 @@ const socketHandler = (io) => {
           if (room.players.length === 0) {
             delete rooms[roomName];
           } else {
+            //jeśli ktoś wyszedł w trakcie gry
             if (room.gameStarted) {
               io.to(roomName).emit("player-left");
               resetRoom(roomName);

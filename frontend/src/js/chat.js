@@ -82,6 +82,16 @@ export async function deleteComment(id) {
   }
 }
 
+const chatInput = document.getElementById("comment-input");
+if (chatInput) {
+  chatInput.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addComment(event);
+    }
+  });
+}
+
 window.addComment = addComment;
 window.editComment = editComment;
 window.deleteComment = deleteComment;

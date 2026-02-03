@@ -7,6 +7,13 @@ body {
   padding: 0;
 }
 
+button,
+.card,
+.close-modal {
+  cursor: pointer;
+  border: none;
+}
+
 #auth-section h2 {
   height: 40vh;
   display: flex;
@@ -21,17 +28,14 @@ body {
   justify-content: center;
 }
 
-.loginForm input {
+.loginForm input,
+.loginForm button {
   padding: 0.5rem;
-  margin-right: 1rem;
   border-radius: 10px;
+  margin-right: 1rem;
 }
 
 .loginForm button {
-  padding: 0.5rem;
-  margin-right: 1rem;
-  border-radius: 10px;
-  border: none;
   background-color: rgba(214, 161, 169, 0.788);
   color: white;
   font-weight: bold;
@@ -41,7 +45,6 @@ body {
   border-radius: 10px;
   background-color: rgba(111, 53, 165, 0.726);
   color: white;
-  border: none;
 }
 
 .header-left {
@@ -62,12 +65,9 @@ body {
 .big-btn2 {
   padding: 8rem 3rem;
   font-size: 2rem;
-  cursor: pointer;
   color: white;
-  border: none;
   border-radius: 30px;
 }
-
 .big-btn1 {
   background-color: rgb(113, 193, 219);
 }
@@ -82,7 +82,6 @@ body {
 .small-btn {
   margin-left: 10px;
   padding: 5px 10px;
-  cursor: pointer;
 }
 
 .page-layout {
@@ -95,8 +94,11 @@ body {
 #game-section input {
   border-radius: 10px;
   padding: 0.25rem;
-  border: none;
-  cursor: pointer;
+}
+
+.player-info-box {
+  position: fixed;
+  right: 1rem;
 }
 
 .optionButtons {
@@ -106,27 +108,17 @@ body {
   border-radius: 15px;
   margin-bottom: 10px;
 }
-
-.player-info-box {
-  position: fixed;
-  right: 1rem;
-}
-
 .button-group {
   display: flex;
   gap: 10px;
 }
-
 .optionButtons button {
   padding: 0.5rem;
   margin: 0.5rem;
   background-color: rgba(111, 53, 165, 0.726);
   color: white;
-  border: none;
   border-radius: 10px;
-  cursor: pointer;
 }
-
 #delete {
   background-color: rgba(236, 34, 34, 0.815);
 }
@@ -154,16 +146,12 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  cursor: pointer;
   border-radius: 8px;
-  cursor: pointer;
 }
-
 .card.flipped {
   background-color: #ecf0f1;
   color: black;
 }
-
 .card.matched {
   background-color: #2ecc71;
 }
@@ -173,21 +161,18 @@ body {
   flex-direction: column;
   gap: 20px;
 }
-
 .leaderboard,
 .chat {
   padding: 20px;
   border-radius: 15px;
   color: white;
 }
-
 .leaderboard {
   background-color: rgba(103, 103, 177, 0.9);
 }
 .chat {
   background-color: rgba(214, 161, 169, 0.9);
 }
-
 #comments-list {
   list-style: none;
   padding-left: 1rem;
@@ -197,21 +182,20 @@ body {
   display: flex;
   flex-direction: column-reverse;
 }
-
 .chat button {
   padding: 0.25rem;
   background-color: rgba(184, 104, 116, 0.788);
   color: white;
-  border: none;
   border-radius: 10px;
-  cursor: pointer;
 }
-
 #leaderboard-list {
   list-style-type: decimal;
   font-weight: bold;
 }
 
+#online-counter {
+  color: lightcoral;
+}
 .global-notification {
   position: fixed;
   top: 20px;
@@ -227,7 +211,6 @@ body {
   pointer-events: none;
   animation: fadeInOut 4s forwards;
 }
-
 @keyframes fadeInOut {
   0% {
     opacity: 0;
@@ -247,61 +230,28 @@ body {
   }
 }
 
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(5px);
-  z-index: 9999;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 500px;
-  position: relative;
-}
-
-.close-modal {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  font-size: 28px;
-  cursor: pointer;
-}
-
 .history-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
 }
-
 .history-table-container {
   max-height: 400px;
   overflow-y: auto;
   margin-top: 10px;
   border-bottom: 1px solid #eee;
 }
-
 .history-table th,
 .history-table td {
   text-align: left;
   padding: 10px;
   border-bottom: 1px solid #eee;
 }
-
 .history-table button {
   background-color: white;
   border: 1px solid grey;
   border-radius: 5px;
-  cursor: pointer;
 }
-
 #history-note-input {
   width: 100%;
   padding: 10px;
@@ -312,15 +262,12 @@ body {
 .add-btn {
   background-color: #2ecc71;
   color: white;
-  border: none;
   padding: 10px 15px;
   border-radius: 8px;
-  cursor: pointer;
   font-weight: bold;
   margin-bottom: 15px;
   width: 100%;
 }
-
 .add-btn:hover {
   background-color: #27ae60;
 }
@@ -350,7 +297,6 @@ body {
   flex-direction: column;
   gap: 10px;
 }
-
 .toast {
   padding: 12px 20px;
   border-radius: 8px;
@@ -360,7 +306,6 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   animation: slideIn 0.3s ease-out;
 }
-
 .toast-success {
   background-color: #4caf50;
 }
@@ -370,13 +315,11 @@ body {
 .toast-info {
   background-color: #2196f3;
 }
-
 .fade-out {
   opacity: 0;
   transform: translateX(100%);
   transition: all 0.5s ease;
 }
-
 @keyframes slideIn {
   from {
     transform: translateX(100%);
@@ -405,7 +348,6 @@ body {
   top: 15px;
   right: 20px;
   font-size: 24px;
-  cursor: pointer;
   color: #333;
 }
 .close-modal:hover {

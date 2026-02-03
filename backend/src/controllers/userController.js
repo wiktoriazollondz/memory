@@ -18,7 +18,7 @@ exports.initMQTT = (io) => {
     const playerCount = io.engine.clientsCount; // pobiera liczbę osób online
     const data = JSON.stringify({ count: playerCount });
     mqttClient.publish(topicOnline, data);
-  }, 30000);
+  }, 10000);
 
   mqttClient.on("message", (receivedTopic, message) => {
     try {

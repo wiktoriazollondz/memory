@@ -49,6 +49,10 @@ import {
 
 window.startSocket = startSocket;
 
+window.handleLogin = function (event) {
+  event.preventDefault();
+  login();
+};
 window.login = login;
 window.register = register;
 window.logout = logout;
