@@ -13,7 +13,7 @@ import {
   lockBoard,
   myTurn,
 } from "./config.js";
-import { createBoard, stopTimer } from "./game.js";
+import { createBoard, stopTimer, backToMenu } from "./game.js";
 import { loadLeaderboard } from "./leaderboard.js";
 import { loadComments } from "./chat.js";
 import { showToast } from "./notifications.js";
@@ -135,12 +135,22 @@ export function startSocket(roomName, mode, icons = null) {
     );
   });
 
+  socket.on("mqtt-player-count", (count) => {
+    const counterElem = document.getElementById("online-counter");
+    if (counterElem) counterElem.innerText = `Graczy online: ${count}`;
+  });
+
   newSocket.on("refresh-chat", loadComments);
 
   newSocket.on(
     "clear-chat-frontend",
     () => (document.getElementById("comments-list").innerHTML = ""),
   );
+
+  newSocket.on("error-msg", (msg) => {
+    showToast(msg, "error");
+    backToMenu();
+  });
 
   newSocket.on("game-over", async (data) => {
     const time = stopTimer();

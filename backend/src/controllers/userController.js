@@ -4,31 +4,40 @@ const mqtt = require("mqtt");
 const { users, comments, history, decks, saveToFile } = require("../database");
 
 const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
-const topic = "game/global/scores"; // temat
+const topicSingleplayer = "game/global/scores";
+const topicOnline = "game/global/heartbeat";
 
 mqttClient.on("connect", () => {
   console.log("MQTT: Połączono z brokerem HiveMQ");
-  mqttClient.subscribe(topic);
+  mqttClient.subscribe([topicSingleplayer, topicOnline]);
 });
 
 // funkcja inicjująca nasłuchiwanie MQTT
 exports.initMQTT = (io) => {
+  setInterval(() => {
+    const playerCount = io.engine.clientsCount; // pobiera liczbę osób online
+    const data = JSON.stringify({ count: playerCount });
+    mqttClient.publish(topicOnline, data);
+  }, 30000);
+
   mqttClient.on("message", (receivedTopic, message) => {
-    if (receivedTopic === topic) {
-      try {
-        const data = JSON.parse(message.toString());
+    try {
+      const data = JSON.parse(message.toString());
+      if (receivedTopic === topicSingleplayer) {
         console.log(
           `MQTT: Nowy wynik odebrany: ${data.username} - ${data.score}s`,
         );
-
-        // przesłanie powiadomienia do wszystkich przez Socket.io
+        // przesłanie powiadomienia do wszystkich przez socketa
         io.emit("global-record-notify", {
           user: data.username,
           score: data.score,
         });
-      } catch (e) {
-        console.error("MQTT: Błąd parsowania wiadomości", e);
+      } else if (receivedTopic === topicOnline) {
+        console.log(`MQTT: Liczba osób online: ${data.count}`);
+        io.emit("mqtt-player-count", data.count);
       }
+    } catch (e) {
+      console.error("MQTT: Błąd", e);
     }
   });
 };
@@ -37,6 +46,7 @@ exports.register = async (req, res) => {
   const { username, password } = req.body;
   if (users.find((u) => u.username === username))
     return res.status(400).send("Użytkownik już istnieje");
+  //hashowanie za pomocą biblioteki bcrypt
   const hashedPassword = await bcrypt.hash(password, 10);
   users.push({ username, password: hashedPassword, bestTime: null });
   saveToFile();
@@ -71,6 +81,7 @@ exports.getLeaderboard = (req, res) => {
   let leaderboard = users
     .filter((u) => u.bestTime !== null)
     .sort((a, b) => a.bestTime - b.bestTime);
+  //wyszukiwanie danych według wzorca
   if (searchText) {
     leaderboard = leaderboard.filter((u) =>
       u.username.toLowerCase().includes(searchText.toLowerCase()),
@@ -86,7 +97,7 @@ exports.updateScore = async (req, res) => {
   const { newTime } = req.body;
 
   if (req.user.username !== username) {
-    return res.status(403).send("Nie możesz zmieniać wyników innych graczy!");
+    return res.status(403).send("Nie możesz zmieniać wyników innych graczy");
   }
 
   const user = users.find((u) => u.username === username);
@@ -94,7 +105,7 @@ exports.updateScore = async (req, res) => {
     user.bestTime = newTime;
     saveToFile();
     const payload = JSON.stringify({ username: user.username, score: newTime });
-    mqttClient.publish(topic, payload);
+    mqttClient.publish(topicSingleplayer, payload);
   }
   res.json(user);
 };
