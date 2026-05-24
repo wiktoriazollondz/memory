@@ -22,7 +22,7 @@ export function startSocket(roomName, mode, icons = null) {
   if (socket) {
     socket.disconnect();
   }
-  const newSocket = io();
+  const newSocket = io({ transports: ["websocket"] });
 
   setSocket(newSocket);
   setCurrentRoom(roomName);

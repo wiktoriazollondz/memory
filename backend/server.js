@@ -28,6 +28,7 @@ socketHandler(io);
 
 userCtrl.initMQTT(io);
 
+app.get('/health', (req, res) => res.status(200).send({ status: 'OK' }));
 app.post("/login", userCtrl.login);
 app.post("/logout", userCtrl.logout);
 

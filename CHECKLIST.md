@@ -17,6 +17,15 @@
 - **Skonfigurowany Ingress** - Ruch przechodzi przez wirtualny router NGINX Ingress Controller.
 - **Automatyzacja CI/CD (GitHub Actions)** - Pipeline buduje obrazy Dockera.
 
+1. *Manifesty Kubernetes*: Masz wszystkie wymagane zasoby K8s, starannie zorganizowane.
+2. *Deploymenty i rolling update*: Frontend i Backend to Deploymenty. Backend działa na 2 replikach i ma poprawną strategię aktualizacji.
+3. *Baza danych i trwałość (PVC)*: Postgres stoi jako w pełni profesjonalny StatefulSet z własnym dyskiem (PVC).
+4. *Izolacja*: Wewnętrzny Service, zewnętrzny Ingress. Baza i MQTT ukryte bezpiecznie w klastrze.
+5. *ConfigMap i Secret*: Zarządzane dynamicznie przez Kustomize – bezpieczne i eleganckie.
+6. *SecurityContext i initContainer*: Backend działa jako użytkownik 1000 (non-root) i czeka na bazę przez initContainer.
+7. *CI/CD*: Twój GitHub Actions świeci na zielono, automatyzując wdrożenie!
+8. *Cache, kolejka, worker*: Wdrożyłaś MQTT, co jest książkowym przykładem tego punktu.
+
 ---
 
 ## 🔍 Dowody działania
