@@ -3,15 +3,8 @@ kind: Deployment
 metadata:
   name: memory-backend
   namespace: memory-game
-  labels:
-    app: memory-backend
 spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+  replicas: 2     #wymagane 2 repliki
   selector:
     matchLabels:
       app: memory-backend
@@ -20,15 +13,37 @@ spec:
       labels:
         app: memory-backend
     spec:
+      # kontenery działają jako non-root
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        
+      # initContainer czeka na bazę danych przed startem backendu
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z memory-db-service-dev 5432; do echo czekam na baze danych...; sleep 2; done;']
+
       containers:
         - name: backend-container
           image: memory-backend:v2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
-          env:
-            - name: PORT
-              value: "3000"
+          
+          # sondy żywotności (używamy bezpiecznego sprawdzenia portu TCP)
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
           resources:
             requests:
               memory: "128Mi"

@@ -8,6 +8,8 @@
 
 *** kubectl delete -k k8s/overlays/dev *** - usuwa stare wdrożenie
 
-*** kubectl get pods -n memory-game -w *** - podglądanue procesów kubernetesa na żywo
+*** kubectl get pods -n memory-game -w *** - podglądanie procesów kubernetesa na żywo
 
 *** kubectl port-forward deployment/memory-frontend-dev 8080:80 -n memory-game *** - w PowerShellu żeby działała strona na http://localhost:8080
+
+*** kubectl rollout restart deployment memory-mqtt-dev -n memory-game *** - restart brokera MQTT

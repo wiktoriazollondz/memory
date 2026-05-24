@@ -27,6 +27,19 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: memory-db-service
+  namespace: memory-game
+spec:
+  selector:
+    app: memory-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: memory-mqtt-service
   namespace: memory-game
 spec:

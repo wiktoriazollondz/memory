@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: memory-db
+  namespace: memory-game
+spec:
+  serviceName: "memory-db-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-db
+  template:
+    metadata:
+      labels:
+        app: memory-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_DB
+              value: "memory_game_db"
+            - name: POSTGRES_PASSWORD
+              value: "SuperTajneHaslo123"
+            - name: POSTGRES_USER
+              value: "db_user"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: dbport
+          volumeMounts:
+            - name: db-storage
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: db-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 256Mi

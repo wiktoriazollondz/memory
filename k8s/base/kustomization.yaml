@@ -7,7 +7,7 @@ resources:
   - frontend-deployment.yaml
   - ingress.yaml
   - mqtt-deployment.yaml
-  - pvc.yaml
+  - database-statefulset.yaml
 
 # kustomize sam wygeneruje bazowe wersje
 configMapGenerator:

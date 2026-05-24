@@ -4,19 +4,17 @@ metadata:
   name: memory-game-ingress
   namespace: memory-game
   annotations:
-    # używamy standardowego kontrolera Ingress opartego na NGINX
-    kubernetes.io/ingress.class: "nginx"
-    # WebSockets i ciasteczka
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    # automatyczne przepisywanie ścieżek, jeśli backend nie spodziewa się prefiksu /api
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # sticky session dla socket.io, dla 2 replik
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "route"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-          # główna strona - przekieruj ruch do Frontendu
           - path: /()(.*)
             pathType: ImplementationSpecific
             backend:
