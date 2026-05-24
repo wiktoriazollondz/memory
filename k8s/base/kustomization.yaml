@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - services.yaml
+  - backend-deployment.yaml
+  - frontend-deployment.yaml
+  - ingress.yaml
+  - mqtt-deployment.yaml
+  - pvc.yaml
+
+# kustomize sam wygeneruje bazowe wersje
+configMapGenerator:
+  - name: memory-game-config
+    literals:
+      - DATABASE_HOST="memory-db-service"
+      - DATABASE_PORT="5432"
+      - DATABASE_NAME="memory_game_db"
+      - MQTT_HOST="memory-mqtt-service"
+      - MQTT_PORT="1883"
+
+secretGenerator:
+  - name: memory-game-secrets
+    type: Opaque
+    literals:
+      - database-user=db_user
+      - database-password=SuperTajneHaslo123

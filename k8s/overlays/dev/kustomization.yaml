@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: memory-game
+nameSuffix: -dev
+
+configMapGenerator:
+  - name: memory-game-config
+    behavior: replace
+    literals:
+      - DATABASE_HOST="memory-db-service-dev"
+      - DATABASE_PORT="5432"
+      - DATABASE_NAME="memory_game_db_dev"
+      - MQTT_HOST="memory-mqtt-service-dev"
+      - MQTT_PORT="1883"
+      - NODE_ENV=development

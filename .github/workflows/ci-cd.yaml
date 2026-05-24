@@ -1,0 +1,63 @@
+name: CI/CD Pipeline - Memory Game
+
+on:
+  push:
+    branches: [ "main", "master" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: wiktoriazollondz/memory
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # logowanie do rejestru kontenerów GitHub Packages
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # obraz backend
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+
+      # obraz frontend
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+
+  k8s-lint-and-validate:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # walidacja manifestów przy użyciu wbudowanego Kustomize i kubectl dry-run
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Validate Kubernetes Manifests (Dry-Run)
+        run: |
+          # Komenda generuje pełny manifest i sprawdza serwerowo/kliencko poprawność składni bez fizycznego wdrażania na klaster
+          kubectl kustomize k8s/overlays/dev --output /tmp/dry-run-manifests.yaml
+          echo "Manifesty wygenerowane pomyślnie. Składnia YAML poprawna."

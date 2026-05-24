@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-mqtt
+  namespace: memory-game
+  labels:
+    app: memory-mqtt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-mqtt
+  template:
+    metadata:
+      labels:
+        app: memory-mqtt
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1883
+        fsGroup: 1883
+
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1883
+              name: mqtt
+            - containerPort: 9001
+              name: websocket
+          
+          # Wymóg: Limity zasobów
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+
+          # czy port sieciowy brokera odpowiada
+          readinessProbe:
+            tcpSocket:
+              port: 1883
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          
+          livenessProbe:
+            tcpSocket:
+              port: 1883
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
