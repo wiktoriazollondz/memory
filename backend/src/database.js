@@ -1,4 +1,6 @@
 const { Client } = require('pg');
+const fs = require('fs');
+const path = require('path');
 
 const users = [];
 const comments = [];
@@ -6,21 +8,19 @@ const rooms = {};
 const history = [];
 const decks = [];
 
-// zmienne środowiskowe, które wstrzykuje Kubernetes z ConfigMap i Secret
 const client = new Client({
-  host: process.env.DATABASE_HOST || 'memory-db-service',
-  port: process.env.DATABASE_PORT || 5432,
-  database: process.env.DATABASE_NAME || 'memory_game_db',
-  user: process.env.DATABASE_USER || 'db_user',
-  password: process.env.DATABASE_PASSWORD || 'SuperTajneHaslo123',
+  host: 'memory-db-service-dev', 
+  port: 5432,
+  database: 'memory_game_db',
+  user: 'db_user',
+  password: 'SuperTajneHaslo123',
 });
 
 const initDB = async () => {
   try {
     await client.connect();
-    console.log("Połączono z bazą PostgreSQL w Kubernetesie");
+    console.log("🚀 Połączono z bazą PostgreSQL w Kubernetesie!");
 
-    // Tworzymy tabelę z jedną kolumną na nasz stan gry
     await client.query(`
       CREATE TABLE IF NOT EXISTS game_state (
         id SERIAL PRIMARY KEY,
@@ -31,21 +31,33 @@ const initDB = async () => {
     const res = await client.query('SELECT data FROM game_state WHERE id = 1');
     if (res.rows.length > 0) {
       const data = res.rows[0].data;
-      
-      // wczytanie danych z bazy do pamięci RAM
       if (data.users) users.push(...data.users);
       if (data.comments) comments.push(...data.comments);
       if (data.history) history.push(...data.history);
-      if (data.decks) {
-        decks.push(...data.decks);
+      if (data.decks) decks.push(...data.decks);
+      console.log("✅ Wczytano stan gry z bazy danych PostgreSQL!");
+    } else {
+      let initialData;
+      
+      // MAGICZNY NAMIERZACZ: cofa się z folderu src/ do backend/ i szuka pliku
+      const DB_FILE = path.join(__dirname, '../database.json');
+      
+      if (fs.existsSync(DB_FILE)) {
+        console.log("Wykryto stary plik JSON. Migruję dane do PostgreSQL...");
+        const oldData = JSON.parse(fs.readFileSync(DB_FILE));
+        if (oldData.users) users.push(...oldData.users);
+        if (oldData.comments) comments.push(...oldData.comments);
+        if (oldData.history) history.push(...oldData.history);
+        if (oldData.decks) decks.push(...oldData.decks);
+        
+        initialData = JSON.stringify({ users, comments, history, decks });
       } else {
         decks.push({ id: "default", owner: "system", name: "Owoce", icons: ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"], isDefault: true });
+        initialData = JSON.stringify({ users, comments, history, decks });
       }
-      console.log("Wczytano stan gry z bazy danych!");
-    } else {
-      decks.push({ id: "default", owner: "system", name: "Owoce", icons: ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"], isDefault: true });
-      const initialData = JSON.stringify({ users, comments, history, decks });
+
       await client.query('INSERT INTO game_state (id, data) VALUES (1, $1)', [initialData]);
+      console.log("Migracja zakończona! Dane zapisane w PostgreSQL.");
     }
   } catch (err) {
     console.error("Błąd bazy danych:", err);

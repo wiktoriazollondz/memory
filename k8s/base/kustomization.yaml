@@ -8,8 +8,8 @@ resources:
   - ingress.yaml
   - mqtt-deployment.yaml
   - database-statefulset.yaml
+  - adminer.yaml
 
-# kustomize sam wygeneruje bazowe wersje
 configMapGenerator:
   - name: memory-game-config
     literals:

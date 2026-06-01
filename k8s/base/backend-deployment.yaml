@@ -4,7 +4,7 @@ metadata:
   name: memory-backend
   namespace: memory-game
 spec:
-  replicas: 2     #wymagane 2 repliki
+  replicas: 2     # wymagane 2 repliki
   selector:
     matchLabels:
       app: memory-backend
@@ -50,4 +50,4 @@ spec:
               cpu: "100m"
             limits:
               memory: "256Mi"
-              cpu: "500m"
+              cpu: "600m"

@@ -1,14 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Wskazujemy bazę
+# wskazujemy bazę
 resources:
   - ../../base
 
-# Przestrzeń nazw dla produkcji
 namespace: memory-game
 
-# Przyrostek dla produkcji (np. memory-backend-prod)
+# przyrostek dla produkcji (np. memory-backend-prod)
 nameSuffix: -prod
 
 configMapGenerator:

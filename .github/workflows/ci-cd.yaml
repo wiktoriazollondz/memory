@@ -58,6 +58,6 @@ jobs:
 
       - name: Validate Kubernetes Manifests (Dry-Run)
         run: |
-          # Komenda generuje pełny manifest i sprawdza serwerowo/kliencko poprawność składni bez fizycznego wdrażania na klaster
+          # komenda generuje pełny manifest i sprawdza serwerowo/kliencko poprawność składni
           kubectl kustomize k8s/overlays/dev --output /tmp/dry-run-manifests.yaml
-          echo "Manifesty wygenerowane pomyślnie. Składnia YAML poprawna."
+          echo "Manifesty wygenerowane pomyślnie."
