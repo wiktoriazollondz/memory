@@ -25,19 +25,18 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # budowanie obrazów i publikacja do rejestru
-      - name: Build and Push Backend Image
+      - name: Build and Push Backend Image to GHCR
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
           tags: ghcr.io/${{ github.repository }}/memory-backend:latest
 
-      - name: Build and Push Frontend Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: true
-          tags: ghcr.io/${{ github.repository }}/memory-frontend:latest
+      # budowanie tych samych obrazów lokalnie na maszynie testowej GitHuba
+      - name: Build local images for testing
+        run: |
+          docker build -t memory-backend:latest ./backend
+          docker build -t memory-frontend:latest ./frontend
 
       # uruchomienie wirtualnego klastra Kubernetes (Kind) w chmurze GitHuba
       - name: Create Kubernetes local cluster (Kind)
@@ -45,17 +44,29 @@ jobs:
         with:
           cluster_name: kind-cluster
 
-      # namespace, żeby Kustomize miał gdzie wejść
+      # ładowanie obrazów prosto do pamięci Kind
+      - name: Load images into Kind
+        run: |
+          kind load docker-image memory-backend:latest --name kind-cluster
+          kind load docker-image memory-frontend:latest --name kind-cluster
+
+      # wymuszenie, żeby Kubernetes korzystał z lokalnej pamięci klastra
+      - name: Patch Image Pull Policy
+        run: |
+          sed -i '/image:.*memory-backend/a \          imagePullPolicy: IfNotPresent' k8s/base/backend-deployment.yaml || true
+          sed -i '/image:.*memory-frontend/a \          imagePullPolicy: IfNotPresent' k8s/base/frontend-deployment.yaml || true
+
+      # stworzenie namespace dla Kustomize
       - name: Create Namespace
         run: |
           kubectl create namespace memory-game
 
-      # wykonanie deploy przez Kustomize
+      # wdrożenie aplikacji za pomocą Kustomize
       - name: Deploy to Kind Cluster via Kustomize
         run: |
           kubectl apply -k k8s/overlays/dev
 
-      # sprawdza rollout
+      # sprawdzenie, czy pody poprawnie wstały
       - name: Verify Backend Rollout Status
         run: |
-          kubectl rollout status deployment/memory-backend-dev -n memory-game --timeout=90s
+          kubectl rollout status deployment/memory-backend-dev -n memory-game --timeout=90sq
