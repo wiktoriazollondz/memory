@@ -12,7 +12,6 @@ jobs:
       packages: write
 
     steps:
-      # pobranie kodu z repo
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -32,41 +31,31 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}/memory-backend:latest
 
-      # budowanie tych samych obrazów lokalnie na maszynie testowej GitHuba
+      # budowanie obrazów lokalnie do testów klastra
       - name: Build local images for testing
         run: |
           docker build -t memory-backend:latest ./backend
           docker build -t memory-frontend:latest ./frontend
 
-      # uruchomienie wirtualnego klastra Kubernetes (Kind) w chmurze GitHuba
+      # uruchomienie klastra testowego Kind
       - name: Create Kubernetes local cluster (Kind)
         uses: helm/kind-action@v1.10.0
         with:
           cluster_name: kind-cluster
 
-      # ładowanie obrazów prosto do pamięci Kind
+      # ładowanie obrazów bezpośrednio do klastra (nie będzie ich szukał w sieci)
       - name: Load images into Kind
         run: |
           kind load docker-image memory-backend:latest --name kind-cluster
           kind load docker-image memory-frontend:latest --name kind-cluster
 
-      # wymuszenie, żeby Kubernetes korzystał z lokalnej pamięci klastra
-      - name: Patch Image Pull Policy
-        run: |
-          sed -i '/image:.*memory-backend/a \          imagePullPolicy: IfNotPresent' k8s/base/backend-deployment.yaml || true
-          sed -i '/image:.*memory-frontend/a \          imagePullPolicy: IfNotPresent' k8s/base/frontend-deployment.yaml || true
-
-      # stworzenie namespace dla Kustomize
-      - name: Create Namespace
+      # stworzenie przestrzeni nazw i wdrożenie aplikacji
+      - name: Create Namespace and Deploy
         run: |
           kubectl create namespace memory-game
-
-      # wdrożenie aplikacji za pomocą Kustomize
-      - name: Deploy to Kind Cluster via Kustomize
-        run: |
           kubectl apply -k k8s/overlays/dev
 
-      # sprawdzenie, czy pody poprawnie wstały
+      # test wdrożenia rollout
       - name: Verify Backend Rollout Status
         run: |
-          kubectl rollout status deployment/memory-backend-dev -n memory-game --timeout=90sq
+          kubectl rollout status deployment/memory-backend-dev -n memory-game --timeout=90s
