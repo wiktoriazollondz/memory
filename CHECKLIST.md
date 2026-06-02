@@ -54,8 +54,12 @@ limit zapotrzebowania kontenerów na CPU i RAM (`resources: requests / limits`) 
 
 
 *** CI/CD GitHub Actions ***
-działający pipeline CI/CD w GitHub Actions -> przy pushu obrazy Dockera są budowane i walidowane
 `.github\workflows\ci-cd.yaml`
+1. `git push`
+2. system buduje nowe obrazy Dockera i od razu publikuje je w zewnętrznym rejestrze GHCR
+3. w chmurze GitHuba tworzony jest tymczasowy klaster testowy za pomocą narzędzia `kind`
+4. cała aplikacja – w tym baza przechowująca zapisaną historię gier i stworzone talie – jest na niego wdrażana przez `Kustomize`
+5. ostatni krok weryfikuje poprawność startu podów za pomocą komendy `kubectl rollout status`
 
 
 
