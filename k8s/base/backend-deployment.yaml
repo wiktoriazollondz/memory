@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: backend-container
-          image: memory-backend:v2
+          image: memory-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
