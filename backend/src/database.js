@@ -9,17 +9,17 @@ const history = [];
 const decks = [];
 
 const client = new Client({
-  host: 'memory-db-service-dev', 
-  port: 5432,
-  database: 'memory_game_db',
-  user: 'db_user',
-  password: 'SuperTajneHaslo123',
+  host: process.env.DATABASE_HOST || 'memory-db-service-dev',
+  port: process.env.DATABASE_PORT || 5432,
+  database: process.env.DATABASE_NAME || 'memory_game_db',
+  user: process.env.DATABASE_USER || 'db_user',
+  password: process.env.DATABASE_PASSWORD // <-- TAK CZYTAMY SEKRET Z KUBERNETESA!
 });
 
 const initDB = async () => {
   try {
     await client.connect();
-    console.log("🚀 Połączono z bazą PostgreSQL w Kubernetesie!");
+    console.log("Połączono z bazą PostgreSQL w Kubernetesie!");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS game_state (
@@ -35,11 +35,11 @@ const initDB = async () => {
       if (data.comments) comments.push(...data.comments);
       if (data.history) history.push(...data.history);
       if (data.decks) decks.push(...data.decks);
-      console.log("✅ Wczytano stan gry z bazy danych PostgreSQL!");
+      console.log("Wczytano stan gry z bazy danych PostgreSQL!");
     } else {
       let initialData;
       
-      // MAGICZNY NAMIERZACZ: cofa się z folderu src/ do backend/ i szuka pliku
+      // cofa się z folderu src/ do backend/ i szuka pliku
       const DB_FILE = path.join(__dirname, '../database.json');
       
       if (fs.existsSync(DB_FILE)) {

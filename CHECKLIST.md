@@ -1,14 +1,11 @@
 link do GitHub Actions: https://github.com/wiktoriazollondz/memory/actions
 
-1. Uruchom klaster i włącz Ingress:
-   ```bash
-   minikube start
-   minikube addons enable ingress
-
+1. Upewnij się, że Twój lokalny klaster Kubernetes jest uruchomiony (Docker Desktop)
 2. włącz apke na środowisko dev z Kustomize - `kubectl apply -k k8s/overlays/dev`
 3. czekaj na uruchomienie podów - `kubectl get pods -n memory-game -w`
 4. `kubectl port-forward svc/memory-frontend-service-dev 8080:80 -n memory-game`
 4. http://localhost:8080
+
 
 ### *Wymagania architektoniczne — Kubernetes i CI/CD*
 

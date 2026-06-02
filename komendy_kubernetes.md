@@ -4,13 +4,15 @@
 
 **_ kubectl create namespace memory-game _** - całą grę wrzucamy do odizolowanej przestrzeni nazw memory-game
 
-**_ kubectl apply -k k8s/overlays/dev _** - Kustomize weźmie nasze pliki z base, wygeneruje ConfigMapy, Secrety z hasłami, dotnie konfigurację pod środowisko dev i wyśle do klastra
+**_ *kubectl apply -k k8s/overlays/dev*_** - Kustomize weźmie nasze pliki z base, wygeneruje ConfigMapy, Secrety z hasłami, dotnie konfigurację pod środowisko dev i wyśle do klastra
 
 **_ kubectl delete -k k8s/overlays/dev _** - usuwa stare wdrożenie
 
 **_ kubectl get pods -n memory-game -w _** - podglądanie procesów kubernetesa na żywo
 
-**_ kubectl port-forward deployment/memory-frontend-dev 8080:80 -n memory-game _** - w PowerShellu żeby działała strona na http://localhost:8080
+*** kubectl logs memory-backend-dev-699f86b5c4-q466t -n memory-game *** - logi konkretnego poda 
+
+**_ *kubectl port-forward deployment/memory-frontend-dev 8080:80 -n memory-game* _** - w PowerShellu żeby działała strona na http://localhost:8080
 
 **_ kubectl rollout restart deployment memory-mqtt-dev -n memory-game _** - restart brokera MQTT
 
@@ -20,6 +22,6 @@
 
 *** kubectl logs deployment/memory-backend-dev -n memory-game *** - logi deploymentu
 
-*** kubectl apply -k k8s/overlays/dev *** - wdraża zmiany
-
 *** docker build -t memory-backend:v8 ./backend *** - aktualizacja po zmienie backendu
+
+*** kubectl kustomize k8s/overlays/prod *** - zobaczyc manifesty z -prod
