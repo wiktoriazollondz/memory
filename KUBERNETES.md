@@ -102,3 +102,33 @@ piszę komentarz na multiplayer
 *** KOLEJKA WIADOMOSCI MQTT ***
 broker wiadomości MQTT w modelu Publish/Subscribe, do asynchronicznej komunikacji między replikami backendu
 # kubectl logs deployment/memory-mqtt-dev -n memory-game
+
+~~~~~~~~~~~~~~~~~~~~~~~ KOMENDY KUBERNETES ~~~~~~~~~~~~~~~~~~~~~~~
+
+kubectl get nodes => lista węzłów
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml => zainstalowanie oficjalnego kontrolera NGINX dla Docker Desktop
+
+kubectl create namespace memory-game => całą grę wrzucamy do odizolowanej przestrzeni nazw memory-game
+
+kubectl apply -k k8s/overlays/dev => Kustomize weźmie nasze pliki z base, wygeneruje ConfigMapy, Secrety z hasłami, dotnie konfigurację pod środowisko dev i wyśle do klastra
+
+kubectl delete -k k8s/overlays/dev => usuwa stare wdrożenie
+
+kubectl get pods -n memory-game -w => podglądanie procesów kubernetesa na żywo
+
+kubectl logs memory-backend-dev-699f86b5c4-q466t -n memory-game => logi konkretnego poda 
+
+kubectl port-forward deployment/memory-frontend-dev 8080:80 -n memory-game => w PowerShellu żeby działała strona na http://localhost:8080
+
+kubectl rollout restart deployment memory-mqtt-dev -n memory-game => restart brokera MQTT
+
+kubectl port-forward svc/adminer-service-dev 8081:8080 -n memory-game => odpalenie bazy danych na http://localhost:8081
+
+kubectl describe deployment memory-backend-dev -n memory-game => opis deploymentu
+
+kubectl logs deployment/memory-backend-dev -n memory-game => logi deploymentu
+
+docker build -t memory-backend:v8 ./backend => aktualizacja po zmienie backendu
+
+kubectl kustomize k8s/overlays/prod => zobaczyc manifesty z -prod
