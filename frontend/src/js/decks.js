@@ -32,35 +32,45 @@ export function closeDeckForm() {
 }
 
 export async function loadDecks() {
-  const response = await fetch(`${API_URL}/decks`, { credentials: "include" });
-  if (!response.ok) return showToast("Błąd ładowania talii", "error");
+  try {
+    const token = await window.getLogtoToken();
+    const response = await fetch(`${API_URL}/decks`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) return showToast("Błąd ładowania talii", "error");
 
-  const decks = await response.json();
-  const list = document.getElementById("deck-manager-list");
-  list.innerHTML = "";
+    const decks = await response.json();
+    const list = document.getElementById("deck-manager-list");
+    list.innerHTML = "";
 
-  decks.forEach((deck) => {
-    const isDefault = deck.id === "default";
-    const row = document.createElement("tr");
-    const iconsStr = deck.icons.join("");
+    decks.forEach((deck) => {
+      const isDefault = deck.id === "default";
+      const row = document.createElement("tr");
+      const iconsStr = deck.icons.join("");
 
-    row.innerHTML = `
-      <td>${deck.name}</td>
-      <td>${iconsStr}</td>
-      <td>
-        ${
-          isDefault
-            ? "<em>Domyślna</em>"
-            : `
-          <button onclick="openDeckForm('${deck.id}', '${deck.name}', '${iconsStr}')">✏️</button>
-          <button onclick="askDeleteDeck('${deck.id}')">🗑️</button>
-        `
-        }
-      </td>
-    `;
-    list.appendChild(row);
-  });
-  updateDeckSelect(decks);
+      row.innerHTML = `
+        <td>${deck.name}</td>
+        <td>${iconsStr}</td>
+        <td>
+          ${
+            isDefault
+              ? "<em>Domyślna</em>"
+              : `
+            <button onclick="openDeckForm('${deck.id}', '${deck.name}', '${iconsStr}')">✏️</button>
+            <button onclick="askDeleteDeck('${deck.id}')">🗑️</button>
+          `
+          }
+        </td>
+      `;
+      list.appendChild(row);
+    });
+    updateDeckSelect(decks);
+  } catch (err) {
+    console.error("Błąd pobierania talii:", err);
+  }
 }
 
 export async function handleDeckSubmit() {
@@ -69,45 +79,55 @@ export async function handleDeckSubmit() {
 
   if (!name) return showToast("Nazwa jest wymagana!", "error");
 
-  if (!currentEditId) {
-    // użycie segmentera, który "widzi" emoji tak jak człowiek
-    const segmenter = new Intl.Segmenter("pl", { granularity: "grapheme" });
-    const segments = segmenter.segment(iconsInput);
-    const icons = [...segments].map((s) => s.segment);
-    console.log("Wykryte ikony:", icons);
+  try {
+    const token = await window.getLogtoToken();
 
-    if (icons.length !== 8) {
-      return showToast(
-        `Wymagane 8 emoji! (Wpisałeś: ${icons.length})`,
-        "error",
-      );
+    if (!currentEditId) {
+      // użycie segmentera, który "widzi" emoji tak jak człowiek
+      const segmenter = new Intl.Segmenter("pl", { granularity: "grapheme" });
+      const segments = segmenter.segment(iconsInput);
+      const icons = [...segments].map((s) => s.segment);
+      console.log("Wykryte ikony:", icons);
+
+      if (icons.length !== 8) {
+        return showToast(
+          `Wymagane 8 emoji! (Wpisałeś: ${icons.length})`,
+          "error",
+        );
+      }
+
+      const response = await fetch(`${API_URL}/decks`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, icons }),
+      });
+
+      if (response.ok) {
+        showToast("Talia utworzona!", "success");
+        closeDeckForm();
+        loadDecks();
+      }
+    } else {
+      const response = await fetch(`${API_URL}/decks/${currentEditId}`, {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ name }),
+      });
+
+      if (response.ok) {
+        showToast("Nazwa zmieniona!", "success");
+        closeDeckForm();
+        loadDecks();
+      }
     }
-
-    const response = await fetch(`${API_URL}/decks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ name, icons }),
-    });
-
-    if (response.ok) {
-      showToast("Talia utworzona!", "success");
-      closeDeckForm();
-      loadDecks();
-    }
-  } else {
-    const response = await fetch(`${API_URL}/decks/${currentEditId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ name }),
-    });
-
-    if (response.ok) {
-      showToast("Nazwa zmieniona!", "success");
-      closeDeckForm();
-      loadDecks();
-    }
+  } catch (err) {
+    console.error("Błąd zapisu talii:", err);
   }
 }
 
@@ -125,15 +145,22 @@ export function closeConfirm() {
 export async function confirmDelete() {
   if (!currentDeleteId) return;
 
-  const response = await fetch(`${API_URL}/decks/${currentDeleteId}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
+  try {
+    const token = await window.getLogtoToken();
+    const response = await fetch(`${API_URL}/decks/${currentDeleteId}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
 
-  if (response.ok) {
-    showToast("Talia została usunięta", "info");
-    closeConfirm();
-    loadDecks();
+    if (response.ok) {
+      showToast("Talia została usunięta", "info");
+      closeConfirm();
+      loadDecks();
+    }
+  } catch (err) {
+    console.error("Błąd usuwania talii:", err);
   }
 }
 
@@ -150,8 +177,11 @@ export function updateDeckSelect(decks) {
 export async function getSelectedDeckIcons() {
   try {
     const select = document.getElementById("active-deck-select");
+    const token = await window.getLogtoToken();
     const response = await fetch(`${API_URL}/decks`, {
-      credentials: "include",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
     });
     const decks = await response.json();
     const deck = decks.find((d) => d.id === (select?.value || "default"));

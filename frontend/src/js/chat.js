@@ -3,8 +3,12 @@ import { showToast } from "./notifications.js";
 
 export async function loadComments() {
   try {
+    const token = await window.getLogtoToken();
+
     const response = await fetch(`${API_URL}/comments`, {
-      credentials: "include",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
     });
     if (!response.ok) return;
 
@@ -21,7 +25,7 @@ export async function loadComments() {
 
       if (c.username === currentUser) {
         content += ` <button onclick="editComment('${c.id}')">Edytuj</button>
-                             <button onclick="deleteComment('${c.id}')">Usuń</button>`;
+                     <button onclick="deleteComment('${c.id}')">Usuń</button>`;
       }
 
       li.innerHTML = content;
@@ -37,10 +41,14 @@ export async function addComment(e) {
   const input = document.getElementById("comment-input");
   if (!input || !input.value) return;
 
+  const token = await window.getLogtoToken();
+
   const response = await fetch(`${API_URL}/comments`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
     body: JSON.stringify({ text: input.value }),
   });
 
@@ -58,12 +66,18 @@ export async function addComment(e) {
 export async function editComment(id) {
   const newText = prompt("Nowa treść:");
   if (!newText) return;
+
+  const token = await window.getLogtoToken();
+
   const response = await fetch(`${API_URL}/comments/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
     body: JSON.stringify({ text: newText }),
   });
+
   if (response.ok) {
     loadComments();
     socket.emit("chat-update", { room: currentRoom });
@@ -72,10 +86,16 @@ export async function editComment(id) {
 
 export async function deleteComment(id) {
   if (!confirm("Usunąć?")) return;
+
+  const token = await window.getLogtoToken();
+
   const response = await fetch(`${API_URL}/comments/${id}`, {
     method: "DELETE",
-    credentials: "include",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
   });
+
   if (response.ok) {
     loadComments();
     socket.emit("chat-update", { room: currentRoom });

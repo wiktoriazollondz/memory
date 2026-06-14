@@ -1,4 +1,4 @@
-import LogtoClient from 'https://esm.sh/@logto/browser';
+import LogtoClient from "https://esm.sh/@logto/browser";
 import { startSocket } from "./socket.js";
 import { deleteAccount, askDeleteAccount } from "./user.js";
 import {
@@ -98,6 +98,9 @@ window.confirmDelete = confirmDelete;
 window.updateDeckSelect = updateDeckSelect;
 window.getSelectedDeckIcons = getSelectedDeckIcons;
 
+window.getLogtoToken = async () =>
+  await logto.getAccessToken("https://memory-api");
+
 window.adminDeleteUser = async function () {
   const targetUsername = document.getElementById("user-to-delete").value;
 
@@ -165,8 +168,9 @@ window.addEventListener("load", async () => {
 
     // pobieramy zweryfikowane dane prosto z tokena
     const userInfo = await logto.fetchUserInfo();
-    document.getElementById("logged-user-display").innerText =
-      userInfo.username || userInfo.name || "Gracz";
+    const finalUsername = userInfo.username || userInfo.name || "Gracz";
+    document.getElementById("logged-user-display").innerText = finalUsername;
+    sessionStorage.setItem("username", finalUsername);
 
     if (userInfo.roles && userInfo.roles.includes("admin")) {
       document.getElementById("admin-panel").style.display = "block";

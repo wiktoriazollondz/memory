@@ -1,9 +1,65 @@
-import { API_URL, gameMode } from "./config.js";
-import { loadLeaderboard } from "./leaderboard.js";
-import { loadComments } from "./chat.js";
-import { loadHistory } from "./history.js";
-import { loadDecks } from "./decks.js";
+import { API_URL } from "./config.js";
 import { showToast } from "./notifications.js";
+import { closeConfirm } from "./decks.js"; // Dodany brakujący import modalu!
+
+export function askDeleteAccount() {
+  const username = sessionStorage.getItem("username");
+  if (!username) return showToast("Nie jesteś zalogowany!", "error");
+  document.getElementById("confirm-modal").style.display = "flex";
+  document.getElementById("confirm-yes-btn").onclick = deleteAccount;
+}
+
+export async function deleteAccount() {
+  const username = sessionStorage.getItem("username");
+  const btn = document.getElementById("confirm-yes-btn");
+  if (btn) btn.disabled = true;
+
+  try {
+    const token = await window.getLogtoToken();
+
+    const response = await fetch(`${API_URL}/users/${username}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (response.ok || response.status === 404) {
+      showToast("Konto usunięte", "info");
+      sessionStorage.clear();
+      
+      setTimeout(() => {
+        // Zamiast tylko odświeżać stronę, wylogowujemy gracza również z Logto!
+        if (typeof window.logout === "function") {
+          window.logout();
+        } else {
+          location.reload();
+        }
+      }, 1500);
+
+    } else {
+      const errorText = await response.text();
+      showToast("Błąd: " + errorText, "error");
+      if (btn) btn.disabled = false;
+    }
+  } catch (err) {
+    showToast("Błąd sieci: Nie udało się połączyć z serwerem", "error");
+    if (btn) btn.disabled = false;
+  } finally {
+    closeConfirm();
+  }
+}
+
+window.askDeleteAccount = askDeleteAccount;
+window.deleteAccount = deleteAccount;
+
+
+// import { API_URL, gameMode } from "./config.js";
+// import { loadLeaderboard } from "./leaderboard.js";
+// import { loadComments } from "./chat.js";
+// import { loadHistory } from "./history.js";
+// import { loadDecks } from "./decks.js";
+// import { showToast } from "./notifications.js";
 
 // export async function login() {
 //   const user = document.getElementById("username").value;
@@ -79,44 +135,44 @@ import { showToast } from "./notifications.js";
 //   location.reload();
 // }
 
-export function askDeleteAccount() {
-  const username = sessionStorage.getItem("username");
-  if (!username) return showToast("Nie jesteś zalogowany!", "error");
-  document.getElementById("confirm-modal").style.display = "flex";
-  document.getElementById("confirm-yes-btn").onclick = deleteAccount;
-}
+// export function askDeleteAccount() {
+//   const username = sessionStorage.getItem("username");
+//   if (!username) return showToast("Nie jesteś zalogowany!", "error");
+//   document.getElementById("confirm-modal").style.display = "flex";
+//   document.getElementById("confirm-yes-btn").onclick = deleteAccount;
+// }
 
-export async function deleteAccount() {
-  const username = sessionStorage.getItem("username");
-  const btn = document.getElementById("confirm-yes-btn");
-  if (btn) btn.disabled = true;
+// export async function deleteAccount() {
+//   const username = sessionStorage.getItem("username");
+//   const btn = document.getElementById("confirm-yes-btn");
+//   if (btn) btn.disabled = true;
 
-  try {
-    const response = await fetch(`${API_URL}/users/${username}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    if (response.ok || response.status === 404) {
-      showToast("Konto usunięte", "info");
-      sessionStorage.clear();
-      setTimeout(() => {
-        location.reload();
-      }, 1500);
-    } else {
-      const errorText = await response.text();
-      showToast("Błąd: " + errorText, "error");
-      if (btn) btn.disabled = false;
-    }
-  } catch (err) {
-    showToast("Błąd sieci: Nie udało się połączyć z serwerem", "error");
-    if (btn) btn.disabled = false;
-  } finally {
-    closeConfirm();
-  }
-}
+//   try {
+//     const response = await fetch(`${API_URL}/users/${username}`, {
+//       method: "DELETE",
+//       credentials: "include",
+//     });
+//     if (response.ok || response.status === 404) {
+//       showToast("Konto usunięte", "info");
+//       sessionStorage.clear();
+//       setTimeout(() => {
+//         location.reload();
+//       }, 1500);
+//     } else {
+//       const errorText = await response.text();
+//       showToast("Błąd: " + errorText, "error");
+//       if (btn) btn.disabled = false;
+//     }
+//   } catch (err) {
+//     showToast("Błąd sieci: Nie udało się połączyć z serwerem", "error");
+//     if (btn) btn.disabled = false;
+//   } finally {
+//     closeConfirm();
+//   }
+// }
 
 // window.login = login;
 // window.register = register;
 // window.logout = logout;
-window.askDeleteAccount = askDeleteAccount;
-window.deleteAccount = deleteAccount;
+// window.askDeleteAccount = askDeleteAccount;
+// window.deleteAccount = deleteAccount;

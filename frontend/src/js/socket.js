@@ -194,19 +194,25 @@ export function startSocket(roomName, mode, icons = null) {
 
     if (mode === "single") {
       try {
+        const token = await window.getLogtoToken();
+
         await fetch(
           `${API_URL}/users/${sessionStorage.getItem("username")}/score`,
           {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
             body: JSON.stringify({ newTime: parseInt(time) }),
           },
         );
         await fetch(`${API_URL}/history`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify({
             score: parseInt(time),
             mode: "single",
