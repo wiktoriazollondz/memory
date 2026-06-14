@@ -4,7 +4,7 @@ metadata:
   name: memory-backend
   namespace: memory-game
 spec:
-  replicas: 2     # wymagane 2 repliki
+  replicas: 1
   selector:
     matchLabels:
       app: memory-backend
