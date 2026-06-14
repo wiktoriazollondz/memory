@@ -1,6 +1,4 @@
 const { Client } = require('pg');
-const fs = require('fs');
-const path = require('path');
 
 const users = [];
 const comments = [];
@@ -13,7 +11,7 @@ const client = new Client({
   port: process.env.DATABASE_PORT || 5432,
   database: process.env.DATABASE_NAME || 'memory_game_db',
   user: process.env.DATABASE_USER || 'db_user',
-  password: process.env.DATABASE_PASSWORD // <-- TAK CZYTAMY SEKRET Z KUBERNETESA!
+  password: process.env.DATABASE_PASSWORD
 });
 
 const initDB = async () => {
@@ -30,6 +28,7 @@ const initDB = async () => {
 
     const res = await client.query('SELECT data FROM game_state WHERE id = 1');
     if (res.rows.length > 0) {
+      // Wczytujemy dane bezpośrednio i wyłącznie z PostgreSQL
       const data = res.rows[0].data;
       if (data.users) users.push(...data.users);
       if (data.comments) comments.push(...data.comments);
@@ -37,27 +36,18 @@ const initDB = async () => {
       if (data.decks) decks.push(...data.decks);
       console.log("Wczytano stan gry z bazy danych PostgreSQL!");
     } else {
-      let initialData;
+      // Baza jest pusta - tworzymy domyślny stan startowy
+      decks.push({ 
+        id: "default", 
+        owner: "system", 
+        name: "Owoce", 
+        icons: ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"], 
+        isDefault: true 
+      });
       
-      // cofa się z folderu src/ do backend/ i szuka pliku
-      const DB_FILE = path.join(__dirname, '../database.json');
-      
-      if (fs.existsSync(DB_FILE)) {
-        console.log("Wykryto stary plik JSON. Migruję dane do PostgreSQL...");
-        const oldData = JSON.parse(fs.readFileSync(DB_FILE));
-        if (oldData.users) users.push(...oldData.users);
-        if (oldData.comments) comments.push(...oldData.comments);
-        if (oldData.history) history.push(...oldData.history);
-        if (oldData.decks) decks.push(...oldData.decks);
-        
-        initialData = JSON.stringify({ users, comments, history, decks });
-      } else {
-        decks.push({ id: "default", owner: "system", name: "Owoce", icons: ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"], isDefault: true });
-        initialData = JSON.stringify({ users, comments, history, decks });
-      }
-
+      const initialData = JSON.stringify({ users, comments, history, decks });
       await client.query('INSERT INTO game_state (id, data) VALUES (1, $1)', [initialData]);
-      console.log("Migracja zakończona! Dane zapisane w PostgreSQL.");
+      console.log("Stworzono początkowy stan gry w bazie PostgreSQL.");
     }
   } catch (err) {
     console.error("Błąd bazy danych:", err);
@@ -66,10 +56,12 @@ const initDB = async () => {
 
 initDB();
 
+// Funkcja aktualizuje cały dokument JSON w bazie
 const saveToFile = () => {
   const dataToSave = JSON.stringify({ users, comments, history, decks });
   client.query('UPDATE game_state SET data = $1 WHERE id = 1', [dataToSave])
     .catch(err => console.error("Błąd zapisu do bazy:", err));
 };
 
-module.exports = { users, comments, history, decks, rooms, saveToFile };
+// Zostawiamy starą nazwę eksportu 'saveToFile', żeby nie musieć zmieniać całego kodu w kontrolerach
+module.exports = { users, comments, history, decks, rooms, saveToFile, client };
