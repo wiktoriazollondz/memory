@@ -1,12 +1,6 @@
-import LogtoClient from '@logto/browser';
+import LogtoClient from "@logto/browser";
 import { startSocket } from "./socket.js";
-import {
-  login,
-  register,
-  logout,
-  deleteAccount,
-  askDeleteAccount,
-} from "./user.js";
+import { deleteAccount, askDeleteAccount } from "./user.js";
 import {
   startSinglePlayer,
   startMultiPlayer,
@@ -33,6 +27,7 @@ import {
   closeHistoryNoteModal,
   openHistoryNoteModal,
   saveHistoryNote,
+  loadHistory,
 } from "./history.js";
 import {
   openDeck,
@@ -49,9 +44,9 @@ import {
 } from "./decks.js";
 
 const logto = new LogtoClient({
-  endpoint: 'http://localhost:3001/',
-  appId: 'dlo8k7hsg7mgbluyy7j1s',
-  scopes: ['urn:logto:scope:roles'],
+  endpoint: "http://localhost:3001/",
+  appId: "dlo8k7hsg7mgbluyy7j1s",
+  scopes: ["urn:logto:scope:roles"],
 });
 
 window.startSocket = startSocket;
@@ -103,23 +98,26 @@ window.confirmDelete = confirmDelete;
 window.updateDeckSelect = updateDeckSelect;
 window.getSelectedDeckIcons = getSelectedDeckIcons;
 
-window.adminDeleteUser = async function() {
+window.adminDeleteUser = async function () {
   const targetUsername = document.getElementById("user-to-delete").value;
-  
-  if(!targetUsername) {
+
+  if (!targetUsername) {
     alert("Wpisz nick gracza!");
     return;
   }
 
   try {
-    const token = await logto.getAccessToken('https://memory-api');
+    const token = await logto.getAccessToken("https://memory-api");
 
-    const response = await fetch(`http://localhost:3000/users/${targetUsername}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${token}` // Pokazujemy kłódce nasz token!
-      }
-    });
+    const response = await fetch(
+      `http://localhost:3000/users/${targetUsername}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`, // Pokazujemy kłódce nasz token!
+        },
+      },
+    );
 
     if (response.ok) {
       alert(`Sukces! Gracz ${targetUsername} został usunięty.`);
@@ -153,9 +151,9 @@ window.addEventListener("load", async () => {
   document.getElementById("auth-section").style.display = "block";
 
   // Logto przekieruje nas na adres /callback z ukrytym kodem w URL
-  if (window.location.pathname === '/callback') {
+  if (window.location.pathname === "/callback") {
     await logto.handleSignInCallback(window.location.href);
-    window.history.replaceState(null, '', '/'); // czyścimy pasek adresu
+    window.history.replaceState(null, "", "/"); // czyścimy pasek adresu
   }
 
   // PKCE: sprawdzamy kryptograficznie, czy użytkownik ma ważną sesję
@@ -164,15 +162,16 @@ window.addEventListener("load", async () => {
   if (isAuthenticated) {
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("menu-section").style.display = "block";
-    
+
     // pobieramy zweryfikowane dane prosto z tokena
     const userInfo = await logto.fetchUserInfo();
-    document.getElementById("logged-user-display").innerText = userInfo.username || userInfo.name || 'Gracz';
+    document.getElementById("logged-user-display").innerText =
+      userInfo.username || userInfo.name || "Gracz";
 
-    if (userInfo.roles && userInfo.roles.includes('admin')) {
+    if (userInfo.roles && userInfo.roles.includes("admin")) {
       document.getElementById("admin-panel").style.display = "block";
     }
-    
+
     loadLeaderboard();
     loadDecks();
     loadComments();

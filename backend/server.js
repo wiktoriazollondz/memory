@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const { auth } = require('express-oauth2-jwt-bearer');
+const { auth } = require("express-oauth2-jwt-bearer");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
@@ -16,17 +16,17 @@ const app = express();
 
 // middleware OAuth 2.0 z Logto
 const requireAuth = auth({
-  audience: 'https://memory-api', // API Identifier z Logto
-  issuerBaseURL: 'http://localhost:3001/oidc', // kto wydał token
-  jwksUri: 'http://logto-service-dev:3001/oidc/jwks', // skąd backend w K8s ma pobrać klucze szyfrujące
+  audience: "https://memory-api", // API Identifier z Logto
+  issuerBaseURL: "http://localhost:3001/oidc", // kto wydał token
+  jwksUri: "http://logto-service-dev:3001/oidc/jwks", // skąd backend w K8s ma pobrać klucze szyfrujące
 });
 
 // middleware do sprawdzania roli admina
 const requireAdmin = (req, res, next) => {
   // wyciągamy role z odszyfrowanego tokena
   const roles = req.auth?.payload?.roles || [];
-  
-  if (roles.includes('admin')) {
+
+  if (roles.includes("admin")) {
     next();
   } else {
     res.status(403).json({ error: "Dostęp zabroniony: Wymagana rola admina" });
@@ -44,14 +44,19 @@ socketHandler(io);
 userCtrl.initMQTT(io);
 
 // endpoint niezabezpieczone (dla każdego)
-app.get('/health', (req, res) => res.status(200).send({ status: 'OK' }));
+app.get("/health", (req, res) => res.status(200).send({ status: "OK" }));
 app.get("/users", userCtrl.getLeaderboard);
 
 // endpointy zabezpieczone (requireAuth)
 app.patch("/users/:username/score", requireAuth, userCtrl.updateScore);
 
 // endpoint wymagający admina (requireAuth + requireAdmin)
-app.delete("/users/:username", requireAuth, requireAdmin, userCtrl.deleteAccount);
+app.delete(
+  "/users/:username",
+  requireAuth,
+  requireAdmin,
+  userCtrl.deleteAccount,
+);
 
 app.get("/comments", commentCtrl.getComments);
 app.post("/comments", requireAuth, commentCtrl.postComment);
