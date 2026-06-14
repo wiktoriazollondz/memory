@@ -4,7 +4,6 @@ const { auth } = require("express-oauth2-jwt-bearer");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
 
 const socketHandler = require("./src/socketService");
 const userCtrl = require("./src/controllers/userController");
@@ -35,7 +34,6 @@ const requireAdmin = (req, res, next) => {
 
 app.use(cors({ origin: "http://localhost:8080", credentials: true }));
 app.use(express.json());
-app.use(cookieParser());
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
@@ -43,9 +41,10 @@ const io = new Server(server, { cors: { origin: "*" } });
 socketHandler(io);
 userCtrl.initMQTT(io);
 
-// endpoint niezabezpieczone (dla każdego)
+// endpoint niezabezpieczone
 app.get("/health", (req, res) => res.status(200).send({ status: "OK" }));
 app.get("/users", userCtrl.getLeaderboard);
+app.get("/comments", commentCtrl.getComments);
 
 // endpointy zabezpieczone (requireAuth)
 app.patch("/users/:username/score", requireAuth, userCtrl.updateScore);
@@ -58,7 +57,6 @@ app.delete(
   userCtrl.deleteAccount,
 );
 
-app.get("/comments", commentCtrl.getComments);
 app.post("/comments", requireAuth, commentCtrl.postComment);
 app.patch("/comments/:id", requireAuth, commentCtrl.editComment);
 app.delete("/comments/:id", requireAuth, commentCtrl.deleteComment);
@@ -74,10 +72,7 @@ app.post("/decks", requireAuth, deckCtrl.createDeck);
 app.patch("/decks/:id", requireAuth, deckCtrl.updateDeck);
 app.delete("/decks/:id", requireAuth, deckCtrl.deleteDeck);
 
-server.listen(3000, "0.0.0.0", () => {
-  console.log("Serwer działa na porcie 3000");
-});
-
+// Wyłapywanie błędów autoryzacji ZAWSZE przed server.listen
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
     console.error("Błąd tokena JWT (401):", err.message);
@@ -85,4 +80,8 @@ app.use((err, req, res, next) => {
   } else {
     next(err);
   }
+});
+
+server.listen(3000, "0.0.0.0", () => {
+  console.log("Serwer działa na porcie 3000");
 });

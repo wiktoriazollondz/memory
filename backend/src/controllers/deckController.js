@@ -1,20 +1,39 @@
+const http = require("http");
 const { decks, saveToFile } = require("../database");
 
-exports.getDecks = (req, res) => {
-  const userDecks = decks.filter(
-    (d) => d.owner === req.user.username || d.isDefault,
-  );
+const getLogtoUsername = (req) => {
+  return new Promise((resolve) => {
+    if (!req.headers.authorization) return resolve("Gracz");
+    const options = {
+      hostname: "logto-service-dev", port: 3001, path: "/oidc/userinfo",
+      method: "GET", headers: { Authorization: req.headers.authorization },
+    };
+    const request = http.request(options, (response) => {
+      let data = ""; response.on("data", (chunk) => (data += chunk));
+      response.on("end", () => {
+        try { const parsed = JSON.parse(data); resolve(parsed.username || parsed.name || "Gracz"); } 
+        catch (e) { resolve("Gracz"); }
+      });
+    });
+    request.on("error", () => resolve("Gracz")); request.end();
+  });
+};
+
+exports.getDecks = async (req, res) => {
+  const username = await getLogtoUsername(req);
+  const userDecks = decks.filter((d) => d.owner === username || d.isDefault);
   res.json(userDecks);
 };
 
-exports.createDeck = (req, res) => {
+exports.createDeck = async (req, res) => {
+  const username = await getLogtoUsername(req);
   const { name, icons } = req.body;
-  if (!icons || icons.length !== 8)
-    return res.status(400).send("Talia musi mieć 8 ikon");
+  
+  if (!icons || icons.length !== 8) return res.status(400).send("Talia musi mieć 8 ikon");
 
   const newDeck = {
     id: Date.now().toString(),
-    owner: req.user.username,
+    owner: username,
     name: name || "Moja talia",
     icons: icons,
     isDefault: false,
@@ -25,10 +44,9 @@ exports.createDeck = (req, res) => {
   res.status(201).json(newDeck);
 };
 
-exports.updateDeck = (req, res) => {
-  const deck = decks.find(
-    (d) => d.id === req.params.id && d.owner === req.user.username,
-  );
+exports.updateDeck = async (req, res) => {
+  const username = await getLogtoUsername(req);
+  const deck = decks.find((d) => d.id === req.params.id && d.owner === username);
   if (!deck) return res.status(404).send("Nie znaleziono talii");
 
   deck.icons = req.body.icons || deck.icons;
@@ -38,10 +56,9 @@ exports.updateDeck = (req, res) => {
   res.json(deck);
 };
 
-exports.deleteDeck = (req, res) => {
-  const index = decks.findIndex(
-    (d) => d.id === req.params.id && d.owner === req.user.username,
-  );
+exports.deleteDeck = async (req, res) => {
+  const username = await getLogtoUsername(req);
+  const index = decks.findIndex((d) => d.id === req.params.id && d.owner === username);
   if (index === -1) return res.status(404).send("Nie znaleziono talii");
 
   decks.splice(index, 1);
