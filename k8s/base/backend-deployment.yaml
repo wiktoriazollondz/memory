@@ -27,8 +27,8 @@ spec:
 
       containers:
         - name: backend-container
-          image: memory-backend:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/wiktoriazollondz/memory-backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           
