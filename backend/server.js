@@ -17,7 +17,7 @@ const app = express();
 // middleware OAuth 2.0 z Logto
 const requireAuth = auth({
   audience: "https://memory-api", // API Identifier z Logto
-  issuerBaseURL: "http://localhost:3001/oidc", // kto wydał token
+  issuer: 'http://localhost:3001/oidc', // kto wydał token
   jwksUri: "http://logto-service-dev:3001/oidc/jwks", // skąd backend w K8s ma pobrać klucze szyfrujące
 });
 
