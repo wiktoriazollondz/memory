@@ -102,6 +102,36 @@ window.confirmDelete = confirmDelete;
 window.updateDeckSelect = updateDeckSelect;
 window.getSelectedDeckIcons = getSelectedDeckIcons;
 
+window.adminDeleteUser = async function() {
+  const targetUsername = document.getElementById("user-to-delete").value;
+  
+  if(!targetUsername) {
+    alert("Wpisz nick gracza!");
+    return;
+  }
+
+  try {
+    const token = await logto.getAccessToken('https://memory-api');
+
+    const response = await fetch(`http://localhost:3000/users/${targetUsername}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}` // Pokazujemy kłódce nasz token!
+      }
+    });
+
+    if (response.ok) {
+      alert(`Sukces! Gracz ${targetUsername} został usunięty.`);
+    } else {
+      const errorData = await response.json();
+      alert(`Błąd: ${errorData.error}`);
+    }
+  } catch (error) {
+    console.error("Błąd usuwania:", error);
+    alert("Nie udało się usunąć gracza (sprawdź konsolę).");
+  }
+};
+
 window.onclick = function (event) {
   const historyModal = document.getElementById("history-modal");
   const deckModal = document.getElementById("deck-modal");
@@ -137,6 +167,10 @@ window.addEventListener("load", () => {
     // pobieramy zweryfikowane dane prosto z tokena
     const userInfo = await logto.fetchUserInfo();
     document.getElementById("logged-user-display").innerText = userInfo.username || userInfo.name || 'Gracz';
+
+    if (userInfo.roles && userInfo.roles.includes('admin')) {
+      document.getElementById("admin-panel").style.display = "block";
+    }
     
     loadLeaderboard();
     loadDecks();
