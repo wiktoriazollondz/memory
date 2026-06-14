@@ -47,6 +47,7 @@ app.get("/users", userCtrl.getLeaderboard);
 app.get("/comments", commentCtrl.getComments);
 
 // endpointy zabezpieczone (requireAuth)
+app.post("/sync-user", requireAuth, userCtrl.syncUser);
 app.patch("/users/:username/score", requireAuth, userCtrl.updateScore);
 
 // endpoint wymagający admina (requireAuth + requireAdmin)

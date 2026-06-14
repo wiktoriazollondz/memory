@@ -1,23 +1,6 @@
 const http = require("http");
 const { history, saveToFile } = require("../database");
-
-const getLogtoUsername = (req) => {
-  return new Promise((resolve) => {
-    if (!req.headers.authorization) return resolve("Gracz");
-    const options = {
-      hostname: "logto-service-dev", port: 3001, path: "/oidc/userinfo",
-      method: "GET", headers: { Authorization: req.headers.authorization },
-    };
-    const request = http.request(options, (response) => {
-      let data = ""; response.on("data", (chunk) => (data += chunk));
-      response.on("end", () => {
-        try { const parsed = JSON.parse(data); resolve(parsed.username || parsed.name || "Gracz"); } 
-        catch (e) { resolve("Gracz"); }
-      });
-    });
-    request.on("error", () => resolve("Gracz")); request.end();
-  });
-};
+const { getLogtoUsername } = require("./userController");
 
 exports.getHistory = async (req, res) => {
   const username = await getLogtoUsername(req);

@@ -166,17 +166,31 @@ window.addEventListener("load", async () => {
   if (isAuthenticated) {
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("menu-section").style.display = "block";
-
-    // pobieramy zweryfikowane dane prosto z tokena
+    
     const userInfo = await logto.fetchUserInfo();
-    const finalUsername = userInfo.username || userInfo.name || "Gracz";
+    const finalUsername = userInfo.username || userInfo.name || 'Gracz';
+    
     document.getElementById("logged-user-display").innerText = finalUsername;
-    sessionStorage.setItem("username", finalUsername);
+    sessionStorage.setItem("username", finalUsername); 
 
-    if (userInfo.roles && userInfo.roles.includes("admin")) {
-      document.getElementById("admin-panel").style.display = "block";
+    try {
+      const token = await window.getLogtoToken();
+      await fetch(`http://localhost:3000/sync-user`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({ username: finalUsername })
+      });
+    } catch (err) {
+      console.error("Błąd synchronizacji profilu:", err);
     }
 
+    if (userInfo.roles && userInfo.roles.includes('admin')) {
+      document.getElementById("admin-panel").style.display = "block";
+    }
+    
     loadLeaderboard();
     loadDecks();
     loadComments();

@@ -1,39 +1,25 @@
 const mqtt = require("mqtt");
-const http = require("http");
 const { users, comments, history, decks, saveToFile } = require("../database");
 
-const getLogtoUsername = (req) => {
-  return new Promise((resolve) => {
-    if (!req.headers.authorization) return resolve("Gracz");
+exports.syncUser = (req, res) => {
+  const sub = req.auth?.payload?.sub; // unikalny numer ID z Logto
+  const { username } = req.body;
 
-    const options = {
-      hostname: "logto-service-dev",
-      port: 3001,
-      path: "/oidc/userinfo",
-      method: "GET",
-      headers: { Authorization: req.headers.authorization },
-    };
+  let user = users.find((u) => u.logtoId === sub || u.username === username);
+  if (!user) {
+    users.push({ logtoId: sub, username: username, bestTime: null });
+  } else {
+    user.logtoId = sub;
+    user.username = username;
+  }
+  saveToFile();
+  res.status(200).send({ message: "OK" });
+};
 
-    const request = http.request(options, (response) => {
-      let data = "";
-      response.on("data", (chunk) => (data += chunk));
-      response.on("end", () => {
-        try {
-          const parsed = JSON.parse(data);
-          resolve(parsed.username || parsed.name || "Gracz");
-        } catch (e) {
-          resolve("Gracz");
-        }
-      });
-    });
-
-    request.on("error", (err) => {
-      console.error("Błąd pobierania nazwy z Logto:", err.message);
-      resolve("Gracz");
-    });
-
-    request.end();
-  });
+exports.getLogtoUsername = (req) => {
+  const sub = req.auth?.payload?.sub;
+  const user = users.find((u) => u.logtoId === sub);
+  return user ? user.username : "Gracz";
 };
 
 const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
@@ -81,23 +67,17 @@ exports.getLeaderboard = (req, res) => {
   res.json(leaderboard.map((u) => ({ username: u.username, bestTime: u.bestTime })));
 };
 
-exports.updateScore = async (req, res) => {
+exports.updateScore = (req, res) => {
   const { username } = req.params;
   const { newTime } = req.body;
-  const reqUsername = await getLogtoUsername(req);
+  const reqUsername = exports.getLogtoUsername(req);
 
   if (reqUsername !== username) {
     return res.status(403).send("Nie możesz zmieniać wyników innych graczy");
   }
 
   let user = users.find((u) => u.username === username);
-  // Jeśli to nowy gracz z Logto, dodajemy go do tablicy wyników
-  if (!user) {
-    user = { username: username, password: "logto-managed", bestTime: null };
-    users.push(user);
-  }
-
-  if (user.bestTime === null || newTime < user.bestTime) {
+  if (user && (user.bestTime === null || newTime < user.bestTime)) {
     user.bestTime = newTime;
     saveToFile();
     const payload = JSON.stringify({ username: user.username, score: newTime });
@@ -106,9 +86,9 @@ exports.updateScore = async (req, res) => {
   res.json(user);
 };
 
-exports.deleteAccount = async (req, res) => {
+exports.deleteAccount = (req, res) => {
   const username = req.params.username;
-  const reqUsername = await getLogtoUsername(req);
+  const reqUsername = exports.getLogtoUsername(req);
   const roles = req.auth?.payload?.roles || [];
 
   if (reqUsername !== username && !roles.includes("admin")) {
