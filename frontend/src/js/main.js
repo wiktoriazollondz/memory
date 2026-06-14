@@ -1,4 +1,4 @@
-import LogtoClient from "@logto/browser";
+import LogtoClient from 'https://esm.sh/@logto/browser';
 import { startSocket } from "./socket.js";
 import { deleteAccount, askDeleteAccount } from "./user.js";
 import {
