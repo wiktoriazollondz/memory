@@ -130,19 +130,19 @@ export async function backToMenu() {
     try {
       // 1. Pobieramy klucz z Logto
       const token = await window.getLogtoToken();
-      
+
       // 2. Dołączamy klucz w nagłówkach
       await fetch(`${API_URL}/comments-clear`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
     } catch (error) {
       console.error("Błąd uwierzytelniania przy czyszczeniu czatu:", error);
     }
   }
-  
+
   if (socket) socket.disconnect();
 
   document.getElementById("game-section").style.display = "none";

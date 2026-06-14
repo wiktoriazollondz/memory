@@ -16,16 +16,16 @@ export async function loadLeaderboard() {
     const token = await window.getLogtoToken();
     const response = await fetch(`${API_URL}/users`, {
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
-    
+
     if (!response.ok) return;
-    
+
     const users = await response.json();
     const list = document.getElementById("leaderboard-list");
     if (!list) return;
-    
+
     list.innerHTML = "";
     users.forEach((u) => {
       const li = document.createElement("li");
@@ -41,19 +41,19 @@ export async function searchPlayers() {
   try {
     const term = document.getElementById("search-input").value;
     const token = await window.getLogtoToken();
-    
+
     const response = await fetch(`${API_URL}/users?search=${term}`, {
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
-    
+
     if (!response.ok) return;
 
     const users = await response.json();
     const list = document.getElementById("leaderboard-list");
     if (!list) return;
-    
+
     list.innerHTML = "";
     users.forEach((u) => {
       const li = document.createElement("li");

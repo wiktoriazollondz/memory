@@ -200,18 +200,18 @@ export function startSocket(roomName, mode, icons = null) {
           `${API_URL}/users/${sessionStorage.getItem("username")}/score`,
           {
             method: "PATCH",
-            headers: { 
+            headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ newTime: parseInt(time) }),
           },
         );
         await fetch(`${API_URL}/history`, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             score: parseInt(time),

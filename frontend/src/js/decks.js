@@ -36,10 +36,10 @@ export async function loadDecks() {
     const token = await window.getLogtoToken();
     const response = await fetch(`${API_URL}/decks`, {
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
-    
+
     if (!response.ok) return showToast("Błąd ładowania talii", "error");
 
     const decks = await response.json();
@@ -98,9 +98,9 @@ export async function handleDeckSubmit() {
 
       const response = await fetch(`${API_URL}/decks`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name, icons }),
       });
@@ -113,9 +113,9 @@ export async function handleDeckSubmit() {
     } else {
       const response = await fetch(`${API_URL}/decks/${currentEditId}`, {
         method: "PATCH",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name }),
       });
@@ -150,8 +150,8 @@ export async function confirmDelete() {
     const response = await fetch(`${API_URL}/decks/${currentDeleteId}`, {
       method: "DELETE",
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (response.ok) {
@@ -180,8 +180,8 @@ export async function getSelectedDeckIcons() {
     const token = await window.getLogtoToken();
     const response = await fetch(`${API_URL}/decks`, {
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
     const decks = await response.json();
     const deck = decks.find((d) => d.id === (select?.value || "default"));

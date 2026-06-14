@@ -7,8 +7,8 @@ export async function loadComments() {
 
     const response = await fetch(`${API_URL}/comments`, {
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
     if (!response.ok) return;
 
@@ -45,9 +45,9 @@ export async function addComment(e) {
 
   const response = await fetch(`${API_URL}/comments`, {
     method: "POST",
-    headers: { 
+    headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ text: input.value }),
   });
@@ -71,9 +71,9 @@ export async function editComment(id) {
 
   const response = await fetch(`${API_URL}/comments/${id}`, {
     method: "PATCH",
-    headers: { 
+    headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ text: newText }),
   });
@@ -92,8 +92,8 @@ export async function deleteComment(id) {
   const response = await fetch(`${API_URL}/comments/${id}`, {
     method: "DELETE",
     headers: {
-      "Authorization": `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   if (response.ok) {

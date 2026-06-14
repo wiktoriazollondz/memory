@@ -44,9 +44,10 @@ import {
 } from "./decks.js";
 
 const logto = new LogtoClient({
-  endpoint: "http://localhost:3001/",
-  appId: "dlo8k7hsg7mgbluyy7j1s",
-  scopes: ["urn:logto:scope:roles"],
+  endpoint: 'http://localhost:3001/',
+  appId: 'dlo8k7hsg7mgbluyy7j1s',
+  scopes: ['urn:logto:scope:roles'],
+  resources: ['https://memory-api'],
 });
 
 window.startSocket = startSocket;

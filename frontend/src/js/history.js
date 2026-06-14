@@ -18,8 +18,8 @@ export async function loadHistory() {
     const token = await window.getLogtoToken();
     const response = await fetch(`${API_URL}/history`, {
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
     if (!response.ok) return;
 
@@ -63,9 +63,9 @@ export async function saveHistoryNote() {
     const token = await window.getLogtoToken();
     const response = await fetch(`${API_URL}/history/${currentHistoryId}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ note }),
     });
@@ -93,8 +93,8 @@ async function confirmDeleteHistory() {
     const response = await fetch(`${API_URL}/history/${currentHistoryId}`, {
       method: "DELETE",
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (response.ok) {

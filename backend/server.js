@@ -33,7 +33,7 @@ const requireAdmin = (req, res, next) => {
   }
 };
 
-app.use(cors({ origin: "http://127.0.0.1:5500", credentials: true }));
+app.use(cors({ origin: "http://localhost:8080", credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -76,4 +76,13 @@ app.delete("/decks/:id", requireAuth, deckCtrl.deleteDeck);
 
 server.listen(3000, "0.0.0.0", () => {
   console.log("Serwer działa na porcie 3000");
+});
+
+app.use((err, req, res, next) => {
+  if (err.name === "UnauthorizedError") {
+    console.error("Błąd tokena JWT (401):", err.message);
+    res.status(401).send(err.message);
+  } else {
+    next(err);
+  }
 });

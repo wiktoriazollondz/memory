@@ -20,14 +20,14 @@ export async function deleteAccount() {
     const response = await fetch(`${API_URL}/users/${username}`, {
       method: "DELETE",
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (response.ok || response.status === 404) {
       showToast("Konto usunięte", "info");
       sessionStorage.clear();
-      
+
       setTimeout(() => {
         // Zamiast tylko odświeżać stronę, wylogowujemy gracza również z Logto!
         if (typeof window.logout === "function") {
@@ -36,7 +36,6 @@ export async function deleteAccount() {
           location.reload();
         }
       }, 1500);
-
     } else {
       const errorText = await response.text();
       showToast("Błąd: " + errorText, "error");
@@ -52,7 +51,6 @@ export async function deleteAccount() {
 
 window.askDeleteAccount = askDeleteAccount;
 window.deleteAccount = deleteAccount;
-
 
 // import { API_URL, gameMode } from "./config.js";
 // import { loadLeaderboard } from "./leaderboard.js";
