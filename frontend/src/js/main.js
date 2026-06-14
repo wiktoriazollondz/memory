@@ -1,3 +1,4 @@
+import LogtoClient from '@logto/browser';
 import { startSocket } from "./socket.js";
 import {
   login,
@@ -47,15 +48,22 @@ import {
   getSelectedDeckIcons,
 } from "./decks.js";
 
+const logtoClient = new LogtoClient({
+  endpoint: 'http://localhost:3001/',
+  appId: 'dlo8k7hsg7mgbluyy7j1s',
+  scopes: ['urn:logto:scope:roles'],
+});
+
 window.startSocket = startSocket;
 
-window.handleLogin = function (event) {
+window.handleLogin = async function (event) {
   event.preventDefault();
-  login();
+  await logto.signIn('http://localhost/callback');
 };
-window.login = login;
 window.register = register;
-window.logout = logout;
+window.logout = async function () {
+  await logto.signOut('http://localhost');
+};
 window.deleteAccount = deleteAccount;
 window.askDeleteAccount = askDeleteAccount;
 
@@ -113,10 +121,23 @@ window.addEventListener("load", () => {
   document.getElementById("menu-section").style.display = "none";
   document.getElementById("auth-section").style.display = "block";
 
-  if (savedUser) {
+  // Logto przekieruje nas na adres /callback z ukrytym kodem w URL
+  if (window.location.pathname === '/callback') {
+    await logto.handleSignInCallback(window.location.href);
+    window.history.replaceState(null, '', '/'); // czyścimy pasek adresu
+  }
+
+  // PKCE: sprawdzamy kryptograficznie, czy użytkownik ma ważną sesję
+  const isAuthenticated = await logto.isAuthenticated();
+
+  if (isAuthenticated) {
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("menu-section").style.display = "block";
-    document.getElementById("logged-user-display").innerText = savedUser;
+    
+    // pobieramy zweryfikowane dane prosto z tokena
+    const userInfo = await logto.fetchUserInfo();
+    document.getElementById("logged-user-display").innerText = userInfo.username || userInfo.name || 'Gracz';
+    
     loadLeaderboard();
     loadDecks();
   }

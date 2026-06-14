@@ -9,6 +9,8 @@ resources:
   - mqtt-deployment.yaml
   - database-statefulset.yaml
   - adminer.yaml
+  - logto-db.yaml
+  - logto-app.yaml
 
 configMapGenerator:
   - name: memory-game-config
@@ -25,3 +27,9 @@ secretGenerator:
     literals:
       - database-user=db_user
       - database-password=SuperTajneHaslo123
+  - name: logto-secrets
+    literals:
+      - POSTGRES_USER=logto
+      - POSTGRES_PASSWORD=SuperTajneHasloLogto123
+      - POSTGRES_DB=logto
+      - DB_URL=postgresql://logto:SuperTajneHasloLogto123@logto-db-service-dev:5432/logto
