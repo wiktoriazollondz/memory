@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: memory-frontend:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/wiktoriazollondz/memory-frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           # sondy
