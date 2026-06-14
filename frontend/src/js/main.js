@@ -175,5 +175,7 @@ window.addEventListener("load", async () => {
     
     loadLeaderboard();
     loadDecks();
+    loadComments();
+    loadHistory();
   }
 });
