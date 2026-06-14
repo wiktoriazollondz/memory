@@ -5,79 +5,79 @@ import { loadHistory } from "./history.js";
 import { loadDecks } from "./decks.js";
 import { showToast } from "./notifications.js";
 
-export async function login() {
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
+// export async function login() {
+//   const user = document.getElementById("username").value;
+//   const pass = document.getElementById("password").value;
 
-  if (!user || !pass) {
-    return showToast("Login i hasło nie mogą być puste!", "error");
-  }
+//   if (!user || !pass) {
+//     return showToast("Login i hasło nie mogą być puste!", "error");
+//   }
 
-  const response = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ username: user, password: pass }),
-  });
+//   const response = await fetch(`${API_URL}/login`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     credentials: "include",
+//     body: JSON.stringify({ username: user, password: pass }),
+//   });
 
-  if (response.ok) {
-    showToast("Miłej gry " + user + "!", "success");
-    sessionStorage.setItem("username", user);
-    document.getElementById("logged-user-display").innerText = user;
+//   if (response.ok) {
+//     showToast("Miłej gry " + user + "!", "success");
+//     sessionStorage.setItem("username", user);
+//     document.getElementById("logged-user-display").innerText = user;
 
-    document.getElementById("auth-section").style.display = "none";
-    document.getElementById("menu-section").style.display = "block";
-    document.getElementById("game-section").style.display = "none";
+//     document.getElementById("auth-section").style.display = "none";
+//     document.getElementById("menu-section").style.display = "block";
+//     document.getElementById("game-section").style.display = "none";
 
-    loadLeaderboard();
-    loadComments();
-    loadHistory();
-    loadDecks();
-  } else {
-    showToast("Błąd logowania!", "error");
-  }
-}
+//     loadLeaderboard();
+//     loadComments();
+//     loadHistory();
+//     loadDecks();
+//   } else {
+//     showToast("Błąd logowania!", "error");
+//   }
+// }
 
-export async function register() {
-  const user = document.getElementById("username").value.trim();
-  const pass = document.getElementById("password").value.trim();
+// export async function register() {
+//   const user = document.getElementById("username").value.trim();
+//   const pass = document.getElementById("password").value.trim();
 
-  if (!user || !pass) {
-    return showToast("Uzupełnij login i hasło!", "error");
-  }
+//   if (!user || !pass) {
+//     return showToast("Uzupełnij login i hasło!", "error");
+//   }
 
-  try {
-    const response = await fetch(`${API_URL}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: user, password: pass }),
-    });
+//   try {
+//     const response = await fetch(`${API_URL}/register`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ username: user, password: pass }),
+//     });
 
-    const message = await response.text();
+//     const message = await response.text();
 
-    if (response.ok) {
-      showToast(message || "Konto utworzone! Możesz się zalogować", "success");
-      document.getElementById("username").value = "";
-      document.getElementById("password").value = "";
-    } else {
-      showToast(message || "Błąd rejestracji", "error");
-    }
-  } catch (err) {
-    showToast("Brak połączenia z serwerem", "error");
-  }
-}
+//     if (response.ok) {
+//       showToast(message || "Konto utworzone! Możesz się zalogować", "success");
+//       document.getElementById("username").value = "";
+//       document.getElementById("password").value = "";
+//     } else {
+//       showToast(message || "Błąd rejestracji", "error");
+//     }
+//   } catch (err) {
+//     showToast("Brak połączenia z serwerem", "error");
+//   }
+// }
 
-export async function logout() {
-  if (gameMode === "multi") {
-    await fetch(`${API_URL}/comments-clear`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-  }
-  await fetch(`${API_URL}/logout`, { method: "POST", credentials: "include" });
-  sessionStorage.clear();
-  location.reload();
-}
+// export async function logout() {
+//   if (gameMode === "multi") {
+//     await fetch(`${API_URL}/comments-clear`, {
+//       method: "DELETE",
+//       credentials: "include",
+//     });
+//   }
+//   await fetch(`${API_URL}/logout`, { method: "POST", credentials: "include" });
+//   sessionStorage.clear();
+//   location.reload();
+// }
 
 export function askDeleteAccount() {
   const username = sessionStorage.getItem("username");
@@ -115,8 +115,8 @@ export async function deleteAccount() {
   }
 }
 
-window.login = login;
-window.register = register;
-window.logout = logout;
+// window.login = login;
+// window.register = register;
+// window.logout = logout;
 window.askDeleteAccount = askDeleteAccount;
 window.deleteAccount = deleteAccount;

@@ -64,7 +64,7 @@ window.handleLogin = async function (event) {
 window.logout = async function () {
   await logto.signOut(window.location.origin);
 };
-window.register = register;
+// window.register = register;
 window.deleteAccount = deleteAccount;
 window.askDeleteAccount = askDeleteAccount;
 
