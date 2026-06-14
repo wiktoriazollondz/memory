@@ -58,12 +58,13 @@ window.startSocket = startSocket;
 
 window.handleLogin = async function (event) {
   event.preventDefault();
-  await logto.signIn('http://localhost/callback');
+  await logto.signIn(`${window.location.origin}/callback`);
+};
+
+window.logout = async function () {
+  await logto.signOut(window.location.origin);
 };
 window.register = register;
-window.logout = async function () {
-  await logto.signOut('http://localhost');
-};
 window.deleteAccount = deleteAccount;
 window.askDeleteAccount = askDeleteAccount;
 
@@ -144,7 +145,7 @@ window.onclick = function (event) {
   }
 };
 
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
   const savedUser = sessionStorage.getItem("username");
 
   document.getElementById("game-section").style.display = "none";
