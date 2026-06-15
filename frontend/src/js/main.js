@@ -46,7 +46,7 @@ import {
 const logto = new LogtoClient({
   endpoint: 'http://localhost:3001/',
   appId: 'dlo8k7hsg7mgbluyy7j1s',
-  scopes: ['urn:logto:scope:roles'],
+  scopes: ['urn:logto:scope:roles', 'profile', 'username', 'email'],
   resources: ['https://memory-api'],
 });
 
@@ -118,7 +118,7 @@ window.adminDeleteUser = async function () {
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`, // Pokazujemy kłódce nasz token!
+          Authorization: `Bearer ${token}`,
         },
       },
     );
@@ -154,7 +154,6 @@ window.addEventListener("load", async () => {
   document.getElementById("menu-section").style.display = "none";
   document.getElementById("auth-section").style.display = "block";
 
-  // Logto przekieruje nas na adres /callback z ukrytym kodem w URL
   if (window.location.pathname === "/callback") {
     await logto.handleSignInCallback(window.location.href);
     window.history.replaceState(null, "", "/"); // czyścimy pasek adresu
@@ -168,8 +167,13 @@ window.addEventListener("load", async () => {
     document.getElementById("menu-section").style.display = "block";
     
     const userInfo = await logto.fetchUserInfo();
-    const finalUsername = userInfo.username || userInfo.name || 'Gracz';
+    console.log("🕵️ Detektyw - dane z Logto:", userInfo);
     
+    let finalUsername = userInfo.username || userInfo.name || userInfo.email || 'Gracz';
+    if (finalUsername.includes('@')) {
+      finalUsername = finalUsername.split('@')[0];
+    }
+
     document.getElementById("logged-user-display").innerText = finalUsername;
     sessionStorage.setItem("username", finalUsername); 
 
