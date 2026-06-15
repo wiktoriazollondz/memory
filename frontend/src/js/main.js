@@ -191,7 +191,10 @@ window.addEventListener("load", async () => {
       console.error("Błąd synchronizacji profilu:", err);
     }
 
-    if (userInfo.roles && userInfo.roles.includes('admin')) {
+    const idTokenClaims = await logto.getIdTokenClaims();
+    console.log("Uprawnienia:", idTokenClaims);
+
+    if (idTokenClaims.roles && idTokenClaims.roles.includes('admin')) {
       document.getElementById("admin-panel").style.display = "block";
     }
     
