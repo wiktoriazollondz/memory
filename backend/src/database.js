@@ -17,7 +17,7 @@ const client = new Client({
 const initDB = async () => {
   try {
     await client.connect();
-    console.log("Połączono z bazą PostgreSQL w Kubernetesie");
+    console.log("Połączono z bazą PostgreSQL!");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS game_state (
@@ -27,32 +27,34 @@ const initDB = async () => {
     `);
 
     const res = await client.query('SELECT data FROM game_state WHERE id = 1');
+    
     if (res.rows.length > 0) {
       const data = res.rows[0].data;
       if (data.users) users.push(...data.users);
       if (data.comments) comments.push(...data.comments);
       if (data.history) history.push(...data.history);
       if (data.decks) decks.push(...data.decks);
-      console.log("Wczytano stan gry z bazy danych PostgreSQL!");
+      console.log("Wczytano stan gry z bazy danych!");
     } else {
-      decks.push({ 
+      const defaultDeck = { 
         id: "default", 
         owner: "system", 
         name: "Owoce", 
-        icons: ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🥭"], 
+        icons: ["🍎", "🍌", "🍇", "🍓", "🍒", "🥝", "🍉", "🍉"], 
         isDefault: true 
-      });
+      };
+      decks.push(defaultDeck);
       
-      const initialData = JSON.stringify({ users, comments, history, decks });
+      const initialData = JSON.stringify({ users: [], comments: [], history: [], decks });
       await client.query('INSERT INTO game_state (id, data) VALUES (1, $1)', [initialData]);
-      console.log("Stworzono początkowy stan gry w bazie PostgreSQL.");
+      console.log("Stworzono początkowy stan gry w bazie.");
     }
   } catch (err) {
-    console.error("Błąd bazy danych:", err);
+    console.error("BŁĄD BAZY DANYCH:", err);
   }
 };
 
-await initDB();
+initDB();
 
 const saveToFile = async () => {
   const dataToSave = JSON.stringify({ users, comments, history, decks });
