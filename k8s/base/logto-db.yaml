@@ -39,7 +39,7 @@ spec:
           image: postgres:15-alpine
           envFrom:
             - secretRef:
-                name: logto-secrets # Kustomize wstrzyknie tu ukryte hasła!
+                name: logto-secrets
           ports:
             - containerPort: 5432
           volumeMounts:
