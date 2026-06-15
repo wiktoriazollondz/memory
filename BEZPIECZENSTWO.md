@@ -36,3 +36,7 @@ To kryptograficzny dowód, który potwierdza, że dokładnie ta sama przeglądar
 ## Volumen danych dla authorization serwera (PVC)
 
 w k8s/base/logto-db.yaml na końcu
+
+# testy automatyczne
+
+w backend/app.test.js
