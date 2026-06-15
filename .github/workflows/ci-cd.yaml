@@ -15,6 +15,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # testy automatyczne
+      - name: Set up Node.js for backend tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # stabilna wersja
+
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: ./backend
+
+      - name: Run automated backend tests 🧪
+        run: npm test
+        working-directory: ./backend
+
       # logowanie do darmowego rejestru obrazów na GitHubie (GHCR)
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3

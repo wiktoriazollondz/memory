@@ -16,7 +16,7 @@ const app = express();
 // middleware OAuth 2.0 z Logto
 const requireAuth = auth({
   audience: "https://memory-api", // API Identifier z Logto
-  issuer: 'http://localhost:3001/oidc', // kto wydał token
+  issuer: "http://localhost:3001/oidc", // kto wydał token
   jwksUri: "http://logto-service-dev:3001/oidc/jwks", // skąd backend w K8s ma pobrać klucze szyfrujące
 });
 
@@ -82,6 +82,10 @@ app.use((err, req, res, next) => {
   }
 });
 
-server.listen(3000, "0.0.0.0", () => {
-  console.log("Serwer działa na porcie 3000");
-});
+if (require.main === module) {
+  server.listen(3000, "0.0.0.0", () => {
+    console.log("Serwer działa na porcie 3000");
+  });
+}
+
+module.exports = app;
