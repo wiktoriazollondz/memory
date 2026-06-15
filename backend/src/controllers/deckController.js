@@ -23,7 +23,7 @@ exports.createDeck = async (req, res) => {
   };
 
   decks.push(newDeck);
-  saveToFile();
+  await saveToFile();
   res.status(201).json(newDeck);
 };
 
@@ -35,7 +35,7 @@ exports.updateDeck = async (req, res) => {
   deck.icons = req.body.icons || deck.icons;
   deck.name = req.body.name || deck.name;
 
-  saveToFile();
+  await saveToFile();
   res.json(deck);
 };
 
@@ -45,6 +45,6 @@ exports.deleteDeck = async (req, res) => {
   if (index === -1) return res.status(404).send("Nie znaleziono talii");
 
   decks.splice(index, 1);
-  saveToFile();
+  await saveToFile();
   res.json({ message: "Talia usunięta" });
 };

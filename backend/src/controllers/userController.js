@@ -12,7 +12,7 @@ exports.syncUser = (req, res) => {
     user.logtoId = sub;
     user.username = username;
   }
-  saveToFile();
+  await saveToFile();
   res.status(200).send({ message: "OK" });
 };
 
@@ -79,7 +79,7 @@ exports.updateScore = (req, res) => {
   let user = users.find((u) => u.username === username);
   if (user && (user.bestTime === null || newTime < user.bestTime)) {
     user.bestTime = newTime;
-    saveToFile();
+    await saveToFile();
     const payload = JSON.stringify({ username: user.username, score: newTime });
     mqttClient.publish(topicSingleplayer, payload);
   }
@@ -110,6 +110,6 @@ exports.deleteAccount = (req, res) => {
   decks.length = 0;
   decks.push(...filteredDecks);
 
-  saveToFile();
+  await saveToFile();
   res.json({ message: "Konto oraz powiązane dane zostały usunięte" });
 };
