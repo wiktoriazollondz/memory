@@ -111,28 +111,26 @@ window.adminDeleteUser = async function () {
   }
 
   try {
-    const token = await logto.getAccessToken("https://memory-api");
+    const token = await window.getLogtoToken();
 
-    const response = await fetch(
-      `http://localhost:3000/users/${targetUsername}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
+    await fetch(`http://localhost:3000/sync-user`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
         },
-      },
-    );
+        body: JSON.stringify({ username: finalUsername })
+      });
 
-    if (response.ok) {
-      alert(`Sukces! Gracz ${targetUsername} został usunięty.`);
-    } else {
-      const errorData = await response.json();
-      alert(`Błąd: ${errorData.error}`);
+      const payload = JSON.parse(atob(token.split('.')[1]));
+
+      if (payload.roles && payload.roles.includes('admin')) {
+        document.getElementById("admin-panel").style.display = "block";
+      }
+
+    } catch (err) {
+      console.error("Błąd synchronizacji profilu lub tokena:", err);
     }
-  } catch (error) {
-    console.error("Błąd usuwania:", error);
-    alert("Nie udało się usunąć gracza (sprawdź konsolę).");
-  }
 };
 
 window.onclick = function (event) {
@@ -167,7 +165,6 @@ window.addEventListener("load", async () => {
     document.getElementById("menu-section").style.display = "block";
     
     const userInfo = await logto.fetchUserInfo();
-    console.log("Dane z Logto:", userInfo);
     
     let finalUsername = userInfo.username || userInfo.name || userInfo.email || 'Gracz';
     if (finalUsername.includes('@')) {
