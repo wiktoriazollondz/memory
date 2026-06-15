@@ -13,7 +13,7 @@ exports.postComment = async (req, res) => {
     date: new Date().toLocaleString(),
   };
   comments.push(newComment);
-  await saveToFile();
+  saveToFile();
   res.status(201).json(newComment);
 };
 
@@ -25,7 +25,7 @@ exports.editComment = async (req, res) => {
   if (comment.username !== username) return res.status(403).send("To nie twój komentarz");
 
   comment.text = req.body.text;
-  await saveToFile();
+  saveToFile();
   res.json(comment);
 };
 
@@ -37,12 +37,12 @@ exports.deleteComment = async (req, res) => {
   if (comments[index].username !== username) return res.status(403).send("Brak uprawnień");
 
   comments.splice(index, 1);
-  await saveToFile();
+  saveToFile();
   res.json({ message: "Usunięto komentarz" });
 };
 
 exports.clearAllComments = (req, res) => {
   comments.length = 0;
-  await saveToFile();
+  saveToFile();
   res.json({ message: "Czat wyczyszczony" });
 };

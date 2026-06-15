@@ -20,7 +20,7 @@ exports.postHistory = async (req, res) => {
   };
 
   history.push(newEntry);
-  await saveToFile();
+  saveToFile();
   res.status(201).json(newEntry);
 };
 
@@ -32,7 +32,7 @@ exports.updateHistoryNote = async (req, res) => {
   if (entry.username !== username) return res.status(403).send("To nie twój wpis");
 
   entry.note = req.body.note;
-  await saveToFile();
+  saveToFile();
   res.json(entry);
 };
 
@@ -44,6 +44,6 @@ exports.deleteHistory = async (req, res) => {
   if (history[index].username !== username) return res.status(403).send("Brak uprawnień");
 
   history.splice(index, 1);
-  await saveToFile();
+  saveToFile();
   res.json({ message: "Usunięto wpis z historii" });
 };
