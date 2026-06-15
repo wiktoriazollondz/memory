@@ -17,7 +17,7 @@ const client = new Client({
 const initDB = async () => {
   try {
     await client.connect();
-    console.log("Połączono z bazą PostgreSQL w Kubernetesie!");
+    console.log("Połączono z bazą PostgreSQL w Kubernetesie");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS game_state (
@@ -28,7 +28,6 @@ const initDB = async () => {
 
     const res = await client.query('SELECT data FROM game_state WHERE id = 1');
     if (res.rows.length > 0) {
-      // Wczytujemy dane bezpośrednio i wyłącznie z PostgreSQL
       const data = res.rows[0].data;
       if (data.users) users.push(...data.users);
       if (data.comments) comments.push(...data.comments);
@@ -36,7 +35,6 @@ const initDB = async () => {
       if (data.decks) decks.push(...data.decks);
       console.log("Wczytano stan gry z bazy danych PostgreSQL!");
     } else {
-      // Baza jest pusta - tworzymy domyślny stan startowy
       decks.push({ 
         id: "default", 
         owner: "system", 
@@ -56,12 +54,10 @@ const initDB = async () => {
 
 initDB();
 
-// Funkcja aktualizuje cały dokument JSON w bazie
 const saveToFile = () => {
   const dataToSave = JSON.stringify({ users, comments, history, decks });
   client.query('UPDATE game_state SET data = $1 WHERE id = 1', [dataToSave])
     .catch(err => console.error("Błąd zapisu do bazy:", err));
 };
 
-// Zostawiamy starą nazwę eksportu 'saveToFile', żeby nie musieć zmieniać całego kodu w kontrolerach
 module.exports = { users, comments, history, decks, rooms, saveToFile, client };

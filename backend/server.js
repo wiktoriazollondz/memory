@@ -22,7 +22,7 @@ const requireAuth = auth({
 
 // middleware do sprawdzania roli admina
 const requireAdmin = (req, res, next) => {
-  // wyciągamy role z odszyfrowanego tokena
+  console.log("ROLE Z TOKENA:", JSON.stringify(req.auth?.payload?.roles));
   const roles = req.auth?.payload?.roles || [];
 
   if (roles.includes("admin")) {
@@ -73,7 +73,6 @@ app.post("/decks", requireAuth, deckCtrl.createDeck);
 app.patch("/decks/:id", requireAuth, deckCtrl.updateDeck);
 app.delete("/decks/:id", requireAuth, deckCtrl.deleteDeck);
 
-// Wyłapywanie błędów autoryzacji ZAWSZE przed server.listen
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
     console.error("Błąd tokena JWT (401):", err.message);

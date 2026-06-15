@@ -46,7 +46,7 @@ import {
 const logto = new LogtoClient({
   endpoint: 'http://localhost:3001/',
   appId: 'dlo8k7hsg7mgbluyy7j1s',
-  scopes: ['urn:logto:scope:roles', 'profile', 'username', 'email'],
+  scopes: ['urn:logto:scope:roles', 'profile', 'email'],
   resources: ['https://memory-api'],
 });
 
