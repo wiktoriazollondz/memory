@@ -44,10 +44,10 @@ import {
 } from "./decks.js";
 
 const logto = new LogtoClient({
-  endpoint: 'http://localhost:3001/',
-  appId: 'dlo8k7hsg7mgbluyy7j1s',
-  scopes: ['urn:logto:scope:roles', 'profile', 'email'],
-  resources: ['https://memory-api'],
+  endpoint: "http://localhost:3001/",
+  appId: "dlo8k7hsg7mgbluyy7j1s",
+  scopes: ["urn:logto:scope:roles", "profile", "email"],
+  resources: ["https://memory-api"],
 });
 
 window.startSocket = startSocket;
@@ -60,7 +60,7 @@ window.handleLogin = async function (event) {
 window.logout = async function () {
   await logto.signOut(window.location.origin);
 };
-// window.register = register;
+
 window.deleteAccount = deleteAccount;
 window.askDeleteAccount = askDeleteAccount;
 
@@ -102,37 +102,6 @@ window.getSelectedDeckIcons = getSelectedDeckIcons;
 window.getLogtoToken = async () =>
   await logto.getAccessToken("https://memory-api");
 
-window.adminDeleteUser = async function () {
-  const targetUsername = document.getElementById("user-to-delete").value;
-
-  if (!targetUsername) {
-    alert("Wpisz nick gracza!");
-    return;
-  }
-
-  try {
-    const token = await window.getLogtoToken();
-
-    await fetch(`http://localhost:3000/sync-user`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        },
-        body: JSON.stringify({ username: finalUsername })
-      });
-
-      const payload = JSON.parse(atob(token.split('.')[1]));
-
-      if (payload.roles && payload.roles.includes('admin')) {
-        document.getElementById("admin-panel").style.display = "block";
-      }
-
-    } catch (err) {
-      console.error("Błąd synchronizacji profilu lub tokena:", err);
-    }
-};
-
 window.onclick = function (event) {
   const historyModal = document.getElementById("history-modal");
   const deckModal = document.getElementById("deck-modal");
@@ -163,38 +132,32 @@ window.addEventListener("load", async () => {
   if (isAuthenticated) {
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("menu-section").style.display = "block";
-    
+
     const userInfo = await logto.fetchUserInfo();
-    
-    let finalUsername = userInfo.username || userInfo.name || userInfo.email || 'Gracz';
-    if (finalUsername.includes('@')) {
-      finalUsername = finalUsername.split('@')[0];
+
+    let finalUsername =
+      userInfo.username || userInfo.name || userInfo.email || "Gracz";
+    if (finalUsername.includes("@")) {
+      finalUsername = finalUsername.split("@")[0];
     }
 
     document.getElementById("logged-user-display").innerText = finalUsername;
-    sessionStorage.setItem("username", finalUsername); 
+    sessionStorage.setItem("username", finalUsername);
 
     try {
       const token = await window.getLogtoToken();
       await fetch(`http://localhost:3000/sync-user`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ username: finalUsername })
+        body: JSON.stringify({ username: finalUsername }),
       });
     } catch (err) {
-      console.error("Błąd synchronizacji profilu:", err);
+      console.error("Błąd synchronizacji profilu lub weryfikacji roli:", err);
     }
 
-    const idTokenClaims = await logto.getIdTokenClaims();
-    console.log("Uprawnienia:", idTokenClaims);
-
-    if (idTokenClaims.roles && idTokenClaims.roles.includes('admin')) {
-      document.getElementById("admin-panel").style.display = "block";
-    }
-    
     loadLeaderboard();
     loadDecks();
     loadComments();

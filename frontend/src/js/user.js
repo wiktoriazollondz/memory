@@ -29,7 +29,6 @@ export async function deleteAccount() {
       sessionStorage.clear();
 
       setTimeout(() => {
-        // Zamiast tylko odświeżać stronę, wylogowujemy gracza również z Logto!
         if (typeof window.logout === "function") {
           window.logout();
         } else {
