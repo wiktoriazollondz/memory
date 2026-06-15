@@ -6,6 +6,8 @@ const rooms = {};
 const history = [];
 const decks = [];
 
+let isDbReady = false;
+
 const client = new Client({
   host: process.env.DATABASE_HOST || 'memory-db-service-dev',
   port: process.env.DATABASE_PORT || 5432,
@@ -49,6 +51,8 @@ const initDB = async () => {
       await client.query('INSERT INTO game_state (id, data) VALUES (1, $1)', [initialData]);
       console.log("Stworzono początkowy stan gry w bazie.");
     }
+
+    isDbReady = true;
   } catch (err) {
     console.error("BŁĄD BAZY DANYCH:", err);
   }
@@ -57,6 +61,11 @@ const initDB = async () => {
 initDB();
 
 const saveToFile = () => {
+  if (!isDbReady) {
+    console.warn("Zignorowano zapis - baza nie jest jeszcze w pełni wczytana!");
+    return;
+  }
+
   const dataToSave = JSON.stringify({ users, comments, history, decks });
   client.query('UPDATE game_state SET data = $1 WHERE id = 1', [dataToSave])
     .catch(err => console.error("Tło: Błąd zapisu do bazy:", err));
