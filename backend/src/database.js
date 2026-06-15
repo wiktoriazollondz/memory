@@ -57,15 +57,13 @@ await initDB();
 const saveToFile = async () => {
   const dataToSave = JSON.stringify({ users, comments, history, decks });
   try {
+    if (!client._connected) {
+      console.warn("Baza niepołączona, pomijam zapis (baza wstanie później)");
+      return;
+    }
     await client.query('UPDATE game_state SET data = $1 WHERE id = 1', [dataToSave]);
   } catch (err) {
-    console.error("Błąd zapisu, próbuję reconnect...", err);
-    try {
-      await client.connect();
-      await client.query('UPDATE game_state SET data = $1 WHERE id = 1', [dataToSave]);
-    } catch (retryErr) {
-      console.error("Krytyczny błąd zapisu po reconnect:", retryErr);
-    }
+    console.error("Błąd zapisu:", err);
   }
 };
 
