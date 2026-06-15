@@ -167,7 +167,7 @@ window.addEventListener("load", async () => {
     document.getElementById("menu-section").style.display = "block";
     
     const userInfo = await logto.fetchUserInfo();
-    console.log("🕵️ Detektyw - dane z Logto:", userInfo);
+    console.log("Dane z Logto:", userInfo);
     
     let finalUsername = userInfo.username || userInfo.name || userInfo.email || 'Gracz';
     if (finalUsername.includes('@')) {
