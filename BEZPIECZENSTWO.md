@@ -13,10 +13,10 @@ http://localhost:3000/health
 
 ## zabezpieczone:
 
-http://localhost:3000/comments
-http://localhost:3000/users
 http://localhost:3000/history
 http://localhost:3000/decks
+http://localhost:3000/comments
+http://localhost:3000/users
 
 ## wymagany admin
 
@@ -27,9 +27,8 @@ konto admin
 
 To kryptograficzny dowód, który potwierdza, że dokładnie ta sama przeglądarka, która zaczęła logowanie, faktycznie je kończy.
 
-1. Gdy klikasz "Zaloguj", przeglądarka wymyśla jednorazowe tajne hasło i wysyła do serwera Logto tylko jego zaszyfrowany hash
-2. Po pomyślnym zalogowaniu, aplikacja chce odebrać bilet wstępu (token) i musi podać to pierwotne, niezaszyfrowane hasło
-3. Serwer sprawdza, czy hasło pasuje do hasha – jeśli haker ukradnie kod po drodze, nic z nim nie zrobi, bo nie zna oryginalnego hasła, które jest schowane w pamięci RAM
+1. Kiedy gracz loguje się na frontendzie, przeglądarka tworzy w tle WŁASNE jednorazowe, tajne hasło i wysyła do serwera Logto jedynie jego zaszyfrowany "odcisk" (hash).
+2. Po udanym logowaniu Logto wydaje token dostępu tylko wtedy, gdy aplikacja na dowód prześle to pierwotne, niezaszyfrowane hasło, co gwarantuje, że nikt po drodze nie przechwycił procesu logowania.
 
 ## Volumen danych dla authorization serwera (PVC)
 
