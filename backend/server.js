@@ -43,9 +43,9 @@ userCtrl.initMQTT(io);
 
 // endpoint niezabezpieczone
 app.get("/health", (req, res) => res.status(200).send({ status: "OK" }));
+app.get("/users", userCtrl.getLeaderboard);
 
 // endpointy zabezpieczone (requireAuth)
-app.get("/users", requireAuth, userCtrl.getLeaderboard);
 app.post("/sync-user", requireAuth, userCtrl.syncUser);
 app.patch("/users/:username/score", requireAuth, userCtrl.updateScore);
 
