@@ -43,10 +43,9 @@ userCtrl.initMQTT(io);
 
 // endpoint niezabezpieczone
 app.get("/health", (req, res) => res.status(200).send({ status: "OK" }));
-app.get("/users", userCtrl.getLeaderboard);
-app.get("/comments", commentCtrl.getComments);
 
 // endpointy zabezpieczone (requireAuth)
+app.get("/users", requireAuth, userCtrl.getLeaderboard);
 app.post("/sync-user", requireAuth, userCtrl.syncUser);
 app.patch("/users/:username/score", requireAuth, userCtrl.updateScore);
 
@@ -58,6 +57,7 @@ app.delete(
   userCtrl.deleteAccount,
 );
 
+app.get("/comments", requireAuth, commentCtrl.getComments);
 app.post("/comments", requireAuth, commentCtrl.postComment);
 app.patch("/comments/:id", requireAuth, commentCtrl.editComment);
 app.delete("/comments/:id", requireAuth, commentCtrl.deleteComment);

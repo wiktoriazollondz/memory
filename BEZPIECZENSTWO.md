@@ -10,15 +10,13 @@ kubectl port-forward svc/logto-service-dev 3002:3002 -n memory-game
 ## niezabezpieczone
 
 http://localhost:3000/health
-http://localhost:3000/comments
-http://localhost:3000/users
 
 ## zabezpieczone:
 
-http://localhost:3000/history/wika
-http://localhost:3000/decks/wika
-http://localhost:3000/users/wika
-http://localhost:3000/comments/wika
+http://localhost:3000/comments
+http://localhost:3000/users
+http://localhost:3000/history
+http://localhost:3000/decks
 
 ## wymagany admin
 
